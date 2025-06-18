@@ -29,9 +29,9 @@ struct SettingsView: View {
                     
                     Toggle("Enable Dry Run by Default", isOn: $settings.enableDryRunByDefault)
                     
-                    Stepper("Max Files per Batch: \(settings.maxFilesPerBatch)", 
-                           value: $settings.maxFilesPerBatch, 
-                           in: 10...1000, 
+                    Stepper("Max Files per Batch: \(settings.maxFilesPerBatch)",
+                           value: $settings.maxFilesPerBatch,
+                           in: 10...1000,
                            step: 10)
                 }
                 
@@ -168,4 +168,3 @@ struct SettingsView: View {
         }
     }
 }
-

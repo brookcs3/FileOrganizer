@@ -5,8 +5,13 @@
 //  Created by Cameron Brooks on 6/18/25.
 //
 
-import Foundation
 
+import Foundation
+import SwiftUI
+import Combine
+
+@available(macOS 26.0, *)
+@MainActor
 class MetadataStore: ObservableObject {
     private let fileManager = FileManager.default
     private let encoder = JSONEncoder()

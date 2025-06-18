@@ -10,7 +10,10 @@
 
 import Foundation
 import UniformTypeIdentifiers
+import SwiftUI
+import Combine
 
+@available(macOS 26.0, *)
 @MainActor
 class FileProcessor: ObservableObject {
     @Published var isProcessing = false

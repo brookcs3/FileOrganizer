@@ -9,6 +9,7 @@
 
 import SwiftUI
 import FoundationModels
+import Combine
 
 @available(macOS 26.0, *)
 @main
@@ -40,7 +41,8 @@ struct FileOrganizerApp: App {
 
 @available(macOS 26.0, *)
 @MainActor
-class AppState: ObservableObject {
+@MainActor
+class class AppState: ObservableObject {
     @Published var selectedDirectory: URL?
     @Published var sortingMode: SortingMode = .aiIntelligent
     @Published var isProcessing = false

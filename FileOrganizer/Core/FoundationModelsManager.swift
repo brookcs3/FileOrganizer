@@ -11,6 +11,7 @@
 import Foundation
 import FoundationModels
 import SwiftUI
+import Combine
 
 @available(macOS 26.0, *)
 @MainActor
@@ -192,3 +193,4 @@ enum FoundationModelsError: Error {
         }
     }
 }
+
