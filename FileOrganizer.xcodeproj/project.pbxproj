@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 90;
 	objects = {
 
 /* Begin PBXContainerItemProxy section */
@@ -50,24 +50,18 @@
 /* Begin PBXFrameworksBuildPhase section */
 		BA8836732E0357DE00CAB74D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		BA8836802E0357DF00CAB74D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		BA88368A2E0357DF00CAB74D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -105,14 +99,10 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			fileSystemSynchronizedGroups = (
 				BA8836782E0357DE00CAB74D /* FileOrganizer */,
 			);
 			name = FileOrganizer;
-			packageProductDependencies = (
-			);
 			productName = FileOrganizer;
 			productReference = BA8836762E0357DE00CAB74D /* FileOrganizer.app */;
 			productType = "com.apple.product-type.application";
@@ -134,8 +124,6 @@
 				BA8836862E0357DF00CAB74D /* FileOrganizerTests */,
 			);
 			name = FileOrganizerTests;
-			packageProductDependencies = (
-			);
 			productName = FileOrganizerTests;
 			productReference = BA8836832E0357DF00CAB74D /* FileOrganizerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -157,8 +145,6 @@
 				BA8836902E0357DF00CAB74D /* FileOrganizerUITests */,
 			);
 			name = FileOrganizerUITests;
-			packageProductDependencies = (
-			);
 			productName = FileOrganizerUITests;
 			productReference = BA88368D2E0357DF00CAB74D /* FileOrganizerUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -195,7 +181,7 @@
 			);
 			mainGroup = BA88366D2E0357DE00CAB74D;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
+			preferredProjectObjectVersion = 90;
 			productRefGroup = BA8836772E0357DE00CAB74D /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -210,48 +196,36 @@
 /* Begin PBXResourcesBuildPhase section */
 		BA8836742E0357DE00CAB74D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		BA8836812E0357DF00CAB74D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		BA88368B2E0357DF00CAB74D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		BA8836722E0357DE00CAB74D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		BA88367F2E0357DF00CAB74D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		BA8836892E0357DF00CAB74D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
@@ -269,7 +243,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		BA8836952E0357DF00CAB74D /* Debug */ = {
+		BA8836952E0357DF00CAB74D /* Debug configuration for PBXProject "FileOrganizer" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -333,7 +307,7 @@
 			};
 			name = Debug;
 		};
-		BA8836962E0357DF00CAB74D /* Release */ = {
+		BA8836962E0357DF00CAB74D /* Release configuration for PBXProject "FileOrganizer" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -389,11 +363,12 @@
 			};
 			name = Release;
 		};
-		BA8836982E0357DF00CAB74D /* Debug */ = {
+		BA8836982E0357DF00CAB74D /* Debug configuration for PBXNativeTarget "FileOrganizer" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -411,20 +386,22 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cameronbrooks.FileOrganizer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = "";
 			};
 			name = Debug;
 		};
-		BA8836992E0357DF00CAB74D /* Release */ = {
+		BA8836992E0357DF00CAB74D /* Release configuration for PBXNativeTarget "FileOrganizer" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -442,16 +419,17 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cameronbrooks.FileOrganizer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = "";
 			};
 			name = Release;
 		};
-		BA88369B2E0357DF00CAB74D /* Debug */ = {
+		BA88369B2E0357DF00CAB74D /* Debug configuration for PBXNativeTarget "FileOrganizerTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -466,12 +444,12 @@
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.2;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FileOrganizer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FileOrganizer";
 			};
 			name = Debug;
 		};
-		BA88369C2E0357DF00CAB74D /* Release */ = {
+		BA88369C2E0357DF00CAB74D /* Release configuration for PBXNativeTarget "FileOrganizerTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -486,12 +464,12 @@
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.2;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FileOrganizer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FileOrganizer";
 			};
 			name = Release;
 		};
-		BA88369E2E0357DF00CAB74D /* Debug */ = {
+		BA88369E2E0357DF00CAB74D /* Debug configuration for PBXNativeTarget "FileOrganizerUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -504,12 +482,12 @@
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.2;
 				TEST_TARGET_NAME = FileOrganizer;
 			};
 			name = Debug;
 		};
-		BA88369F2E0357DF00CAB74D /* Release */ = {
+		BA88369F2E0357DF00CAB74D /* Release configuration for PBXNativeTarget "FileOrganizerUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
@@ -522,7 +500,7 @@
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.2;
 				TEST_TARGET_NAME = FileOrganizer;
 			};
 			name = Release;
@@ -533,37 +511,33 @@
 		BA8836712E0357DE00CAB74D /* Build configuration list for PBXProject "FileOrganizer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				BA8836952E0357DF00CAB74D /* Debug */,
-				BA8836962E0357DF00CAB74D /* Release */,
+				BA8836952E0357DF00CAB74D /* Debug configuration for PBXProject "FileOrganizer" */,
+				BA8836962E0357DF00CAB74D /* Release configuration for PBXProject "FileOrganizer" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		BA8836972E0357DF00CAB74D /* Build configuration list for PBXNativeTarget "FileOrganizer" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				BA8836982E0357DF00CAB74D /* Debug */,
-				BA8836992E0357DF00CAB74D /* Release */,
+				BA8836982E0357DF00CAB74D /* Debug configuration for PBXNativeTarget "FileOrganizer" */,
+				BA8836992E0357DF00CAB74D /* Release configuration for PBXNativeTarget "FileOrganizer" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		BA88369A2E0357DF00CAB74D /* Build configuration list for PBXNativeTarget "FileOrganizerTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				BA88369B2E0357DF00CAB74D /* Debug */,
-				BA88369C2E0357DF00CAB74D /* Release */,
+				BA88369B2E0357DF00CAB74D /* Debug configuration for PBXNativeTarget "FileOrganizerTests" */,
+				BA88369C2E0357DF00CAB74D /* Release configuration for PBXNativeTarget "FileOrganizerTests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		BA88369D2E0357DF00CAB74D /* Build configuration list for PBXNativeTarget "FileOrganizerUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				BA88369E2E0357DF00CAB74D /* Debug */,
-				BA88369F2E0357DF00CAB74D /* Release */,
+				BA88369E2E0357DF00CAB74D /* Debug configuration for PBXNativeTarget "FileOrganizerUITests" */,
+				BA88369F2E0357DF00CAB74D /* Release configuration for PBXNativeTarget "FileOrganizerUITests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
