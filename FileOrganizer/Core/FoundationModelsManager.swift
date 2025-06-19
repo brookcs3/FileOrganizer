@@ -40,7 +40,14 @@ class FoundationModelsManager: ObservableObject {
     @Published var availabilityStatus: String = "Checking..."
     @Published var model: SystemLanguageModel?
     @Published var session: LanguageModelSession?
-    
+
+    // Pool used when analyzing multiple files in parallel
+    private var sessionPool: SessionPool?
+
+    private let instructionsText = """
+        You are a file organization assistant that analyzes file content and provides categorization metadata.
+        """
+
     private let maxTokens = 4096 // Apple LLM token limit
     
     func initialize() async {
@@ -51,12 +58,13 @@ class FoundationModelsManager: ObservableObject {
         case .available:
             self.isAvailable = true
             self.availabilityStatus = "Foundation Model Available"
-            
-            // Create a session for file analysis
-            let session = LanguageModelSession(instructions: """
-                You are a file organization assistant that analyzes file content and provides categorization metadata.
-                """)
+
+            // Create a session for file analysis and a small pool for parallel work
+            let session = LanguageModelSession(instructions: instructionsText)
             self.session = session
+            self.sessionPool = SessionPool(maxParallel: 3) { [instructionsText] in
+                LanguageModelSession(instructions: instructionsText)
+            }
             
         case .unavailable(.deviceNotEligible):
             self.isAvailable = false
@@ -77,20 +85,23 @@ class FoundationModelsManager: ObservableObject {
         
     }
     
-    /// Resets the Foundation Models session, ensuring a fresh context for each file.
+    /// Resets the Foundation Models session pool, ensuring a fresh context for each file.
     func resetSession() {
-        guard let model = self.model else { return }
-        let session = LanguageModelSession(instructions: """
-            You are a file organization assistant that analyzes file content and provides categorization metadata.
-            """)
+        guard isAvailable else { return }
+        let session = LanguageModelSession(instructions: instructionsText)
         self.session = session
+        self.sessionPool = SessionPool(maxParallel: 3) { [instructionsText] in
+            LanguageModelSession(instructions: instructionsText)
+        }
     }
     
     func analyzeFileContent(_ content: String,
                             fileName: String,
                             fileType: String) async throws -> FileAnalysisResult {
         
-        guard let session else { throw FoundationModelsError.sessionNotAvailable }
+        guard let pool = sessionPool else { throw FoundationModelsError.sessionNotAvailable }
+        let session = try await pool.acquire()
+        defer { pool.release(session) }
         
         let safeContent = String(content.prefix(3_000))
         let prompt = """
@@ -105,7 +116,7 @@ class FoundationModelsManager: ObservableObject {
         
         let opts = GenerationOptions(temperature: temperature)
         
-        let response = try await session.respond(
+        let response = try await (session as! LanguageModelSession).respond(
             to: prompt,
             generating: FileMetadata.self,
             includeSchemaInPrompt: false,
