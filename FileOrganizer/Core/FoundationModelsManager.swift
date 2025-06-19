@@ -62,7 +62,9 @@ class FoundationModelsManager: ObservableObject {
             // Create a session for file analysis and a small pool for parallel work
             let session = LanguageModelSession(instructions: instructionsText)
             self.session = session
+
             self.sessionPool = SessionPool<LanguageModelSession>(maxParallel: 3) { [instructionsText] in
+
                 LanguageModelSession(instructions: instructionsText)
             }
             
@@ -116,7 +118,7 @@ class FoundationModelsManager: ObservableObject {
         
         let opts = GenerationOptions(temperature: temperature)
         
-        let response = try await session.respond(
+        let response = try await (session as! LanguageModelSession).respond(
             to: prompt,
             generating: FileMetadata.self,
             includeSchemaInPrompt: false,
