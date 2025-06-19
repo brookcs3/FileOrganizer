@@ -259,7 +259,7 @@ struct ContentView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                         }
-                        .liquidGlassBackground(cornerRadius: 8)
+                        .liquidGlassBackground()
                     }
                     .padding()
                     .liquidGlassBackground()
