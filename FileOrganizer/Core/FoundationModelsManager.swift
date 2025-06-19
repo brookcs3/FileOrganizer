@@ -42,7 +42,7 @@ class FoundationModelsManager: ObservableObject {
     @Published var session: LanguageModelSession?
 
     // Pool used when analyzing multiple files in parallel
-    private var sessionPool: SessionPool?
+    private var sessionPool: SessionPool<LanguageModelSession>?
 
     private let instructionsText = """
         You are a file organization assistant that analyzes file content and provides categorization metadata.
@@ -62,7 +62,9 @@ class FoundationModelsManager: ObservableObject {
             // Create a session for file analysis and a small pool for parallel work
             let session = LanguageModelSession(instructions: instructionsText)
             self.session = session
-            self.sessionPool = SessionPool(maxParallel: 3) { [instructionsText] in
+
+            self.sessionPool = SessionPool<LanguageModelSession>(maxParallel: 3) { [instructionsText] in
+
                 LanguageModelSession(instructions: instructionsText)
             }
             
@@ -90,7 +92,8 @@ class FoundationModelsManager: ObservableObject {
         guard isAvailable else { return }
         let session = LanguageModelSession(instructions: instructionsText)
         self.session = session
-        self.sessionPool = SessionPool(maxParallel: 3) { [instructionsText] in
+
+        self.sessionPool = SessionPool<LanguageModelSession>(maxParallel: 3) { [instructionsText] in
             LanguageModelSession(instructions: instructionsText)
         }
     }
