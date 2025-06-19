@@ -185,9 +185,7 @@ struct ContentView: View {
                         
                         Spacer()
                     }
-                    .padding()
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .cornerRadius(12)
+                    .liquidGlassBackground()
                 }
                 
                 // Main Action Area
@@ -209,8 +207,7 @@ struct ContentView: View {
                                 .foregroundColor(.secondary)
                         }
                         .padding(24)
-                        .background(Color(NSColor.controlBackgroundColor))
-                        .cornerRadius(12)
+                        .liquidGlassBackground()
                         
                     } else {
                         // Ready State
@@ -240,8 +237,7 @@ struct ContentView: View {
                             .controlSize(.large)
                         }
                         .padding(32)
-                        .background(Color(NSColor.controlBackgroundColor))
-                        .cornerRadius(12)
+                        .liquidGlassBackground()
                     }
                 }
                 
@@ -263,13 +259,10 @@ struct ContentView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                         }
-                        .padding()
-                        .background(Color(NSColor.controlBackgroundColor))
-                        .cornerRadius(8)
+                        .liquidGlassBackground()
                     }
                     .padding()
-                    .background(Color(NSColor.windowBackgroundColor))
-                    .cornerRadius(12)
+                    .liquidGlassBackground()
                 }
                 
                 Spacer()
@@ -278,6 +271,7 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle("File Organizer")
+        .containerBackground(.ultraThinMaterial, for: .window)
         .fileImporter(
             isPresented: $showingDirectoryPicker,
             allowedContentTypes: [.folder],

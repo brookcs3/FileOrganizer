@@ -92,7 +92,6 @@ class FoundationModelsManager: ObservableObject {
         guard isAvailable else { return }
         let session = LanguageModelSession(instructions: instructionsText)
         self.session = session
-
         self.sessionPool = SessionPool<LanguageModelSession>(maxParallel: 3) { [instructionsText] in
             LanguageModelSession(instructions: instructionsText)
         }
