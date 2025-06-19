@@ -66,6 +66,7 @@ struct HistoryView: View {
             }
         }
         .frame(width: 800, height: 600)
+        .liquidGlassBackground()
     }
 }
 
@@ -173,8 +174,7 @@ struct HistoryDetailView: View {
                             .textSelection(.enabled)
                     }
                     .padding()
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .cornerRadius(8)
+                    .liquidGlassBackground(cornerRadius: 8)
                     
                     VStack(alignment: .leading, spacing: 4) {
                         Label("Target", systemImage: "folder.badge.plus")
@@ -187,8 +187,7 @@ struct HistoryDetailView: View {
                             .textSelection(.enabled)
                     }
                     .padding()
-                    .background(Color(NSColor.controlBackgroundColor))
-                    .cornerRadius(8)
+                    .liquidGlassBackground(cornerRadius: 8)
                 }
                 
                 Divider()
@@ -210,8 +209,7 @@ struct HistoryDetailView: View {
                                 Spacer()
                             }
                             .padding(8)
-                            .background(Color(NSColor.controlBackgroundColor))
-                            .cornerRadius(6)
+                            .liquidGlassBackground(cornerRadius: 6)
                         }
                     }
                 }
@@ -245,7 +243,6 @@ struct StatCard: View {
                 .multilineTextAlignment(.center)
         }
         .padding()
-        .background(Color(NSColor.controlBackgroundColor))
-        .cornerRadius(12)
+        .liquidGlassBackground(cornerRadius: 12)
     }
 }

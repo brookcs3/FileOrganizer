@@ -7,21 +7,21 @@
 
 import FoundationModels   // for LanguageModelSessionProtocol
 
-actor SessionPool {
-    private let makeSession: () -> LanguageModelSessionProtocol
+actor SessionPool<T: LanguageModelSessionProtocol> {
+    private let makeSession: () -> T
     private let maxParallel: Int
-    private var idle:  [LanguageModelSessionProtocol] = []
+    private var idle:  [T] = []
     private var inUse: Set<ObjectIdentifier>          = []
     
     init(maxParallel: Int = 3,
-         factory: @escaping () -> LanguageModelSessionProtocol) {
+         factory: @escaping () -> T) {
         self.maxParallel = maxParallel
         self.makeSession = factory
         self.idle = (0..<maxParallel).map { _ in factory() }
     }
-    
+
     /// Borrow a hot session; waits if all are busy.
-    func acquire() async throws -> LanguageModelSessionProtocol {
+    func acquire() async throws -> T {
         while idle.isEmpty { try await Task.sleep(nanoseconds: 2_000_000) }
         let s = idle.removeFirst()
         try await s.resetContext()          // ← add
@@ -31,7 +31,7 @@ actor SessionPool {
 
 
     /// Return it to the pool.
-    func release(_ s: LanguageModelSessionProtocol) {
+    func release(_ s: T) {
         inUse.remove(ObjectIdentifier(s))
         idle.append(s)
     }

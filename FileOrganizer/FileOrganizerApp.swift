@@ -34,6 +34,7 @@ struct FileOrganizerApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified)
+        .containerBackground(.ultraThinMaterial, for: .window)
         
         Settings {
             SettingsView()
