@@ -63,47 +63,68 @@ class FileProcessor: ObservableObject {
         progress      = 0.1
 
         // ── 2. Analyse each file ────────────────────────────────────────
-        var processed: [FileItem] = []
+        var processed = Array<FileItem?>(repeating: nil, count: fileItems.count)
         let total = fileItems.count
 
-        for (idx, file) in fileItems.enumerated() {
+        await withTaskGroup(of: (Int, FileItem).self) { group in
+            for (idx, file) in fileItems.enumerated() {
+                group.addTask { [mode, self] in
+                    await MainActor.run {
+                        self.currentStatus = "Analyzing \(file.name)..."
+                    }
 
-            currentStatus = "Analyzing \(file.name)..."
-            var updated   = file
+                    var updated = file
+                    switch mode {
+                    case .aiIntelligent:
+                        if foundationModelsManager.isAvailable {
+                            do {
+                                updated.analysisResult = try await analyzeFileWithAI(file)
+                            } catch {
+                                print("AI analysis failed for \(file.name): \(error)")
+                                updated.analysisResult = createFallbackAnalysis(for: file)
+                            }
+                        } else {
+                            updated.analysisResult = createFallbackAnalysis(for: file)
+                        }
+                    case .byDate:
+                        updated.analysisResult = createDateBasedAnalysis(for: file)
+                    case .byType:
+                        updated.analysisResult = createTypeBasedAnalysis(for: file)
+                    }
 
-            switch mode {
-            case .aiIntelligent:
-                if foundationModelsManager.isAvailable {
-                    foundationModelsManager.resetSession()
-                    updated.analysisResult = try await analyzeFileWithAI(file)
-                } else {
-                    updated.analysisResult = createFallbackAnalysis(for: file)
+                    if let meta = updated.analysisResult {
+                        do {
+                            try await DirectorySummarySession.shared.add(
+                                FileMetadata(
+                                    primaryCategory : meta.category,
+                                    secondaryCategory: meta.subcategory,
+                                    suggestedFilename: meta.suggestedName,
+                                    summary         : meta.description,
+                                    tags            : meta.tags,
+                                    confidence      : meta.confidence
+                                )
+                            )
+                        } catch {
+                            print("Summary update failed for \(file.name): \(error)")
+                        }
+                    }
+
+                    return (idx, updated)
                 }
-            case .byDate:
-                updated.analysisResult = createDateBasedAnalysis(for: file)
-            case .byType:
-                updated.analysisResult = createTypeBasedAnalysis(for: file)
             }
 
-            // —— NEW: feed bullet to continuity session ——————————————
-            if let meta = updated.analysisResult {
-                try await DirectorySummarySession.shared.add(
-                    FileMetadata(
-                        primaryCategory : meta.category,
-                        secondaryCategory: meta.subcategory,
-                        suggestedFilename: meta.suggestedName,
-                        summary         : meta.description,
-                        tags            : meta.tags,
-                        confidence      : meta.confidence
-                    )
-                )
+            var completed = 0
+            for await (idx, item) in group {
+                processed[idx] = item
+                completed += 1
+                await MainActor.run {
+                    progress = 0.1 + 0.7 * Double(completed) / Double(total)
+                }
+                try await Task.sleep(nanoseconds: 10_000_000)
             }
-            // ————————————————————————————————————————————————
-
-            processed.append(updated)
-            progress = 0.1 + 0.7 * Double(idx + 1) / Double(total)
-            try await Task.sleep(nanoseconds: 10_000_000) // 10 ms throttle
         }
+
+        let processed = processed.compactMap { $0 }
 
         // ── 3. Create & execute organization plan ───────────────────────
         currentStatus = "Creating organization plan..."
@@ -311,9 +332,8 @@ class FileProcessor: ObservableObject {
     // MARK: - Organization Planning
     
     private func createOrganizationPlan(files: [FileItem], sourceDirectory: URL, mode: SortingMode) -> OrganizationPlan {
-        // Create in Documents folder instead (guaranteed writable)
-        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let targetDirectory = documentsURL.appendingPathComponent("Organized_\(Date().timeIntervalSince1970)")
+        // Organize files in place within the selected directory
+        let targetDirectory = sourceDirectory
         var operations: [FileOperation] = []
         
         // Group files by category
@@ -335,8 +355,8 @@ class FileProcessor: ObservableObject {
             
             // Add file move operations
             for file in categoryFiles {
-                let targetURL = categoryURL.appendingPathComponent(file.analysisResult?.suggestedName ?? file.name)
-                
+                let targetURL = buildTargetURL(for: file, in: categoryURL)
+
                 operations.append(FileOperation(
                     sourceURL: file.url,
                     targetURL: targetURL,
@@ -345,13 +365,29 @@ class FileProcessor: ObservableObject {
                 ))
             }
         }
-        
+
         return OrganizationPlan(
             sourceDirectory: sourceDirectory,
             targetDirectory: targetDirectory,
             operations: operations,
             isDryRun: true
         )
+    }
+
+    /// Builds the final destination URL for a file.
+    ///
+    /// This helper runs *after* AI analysis has completed, so it does not
+    /// consume any model tokens. It simply ensures the original extension is
+    /// preserved if the suggested name does not include one.
+    private func buildTargetURL(for file: FileItem, in categoryURL: URL) -> URL {
+        var baseName = file.analysisResult?.suggestedName ?? file.name
+
+        let hasExtension = !URL(fileURLWithPath: baseName).pathExtension.isEmpty
+        if !hasExtension {
+            baseName += "." + file.fileExtension
+        }
+
+        return categoryURL.appendingPathComponent(baseName)
     }
     
     // MARK: - Organization Execution
