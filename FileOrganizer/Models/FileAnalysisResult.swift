@@ -50,6 +50,7 @@ struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable {
     let isDryRun: Bool
     let duration: TimeInterval
     
+    
     init(sourceDirectory: String, targetDirectory: String, mode: String, filesProcessed: Int, filesOrganized: Int, categoriesCreated: [String], isDryRun: Bool, duration: TimeInterval) {
         self.id = UUID()
         self.timestamp = Date()

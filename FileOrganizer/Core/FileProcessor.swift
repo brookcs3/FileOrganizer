@@ -12,6 +12,8 @@ import Foundation
 import UniformTypeIdentifiers
 import SwiftUI
 import Combine
+import FoundationModels          // ← add this line
+import OSLog
 
 @available(macOS 26.0, *)
 @MainActor
@@ -28,103 +30,120 @@ class FileProcessor: ObservableObject {
     }
     
     // MARK: - Main Processing Functions
-    
-    func processDirectory(_ directoryURL: URL, mode: SortingMode, isDryRun: Bool = true) async throws -> OrganizationResult {
-        
+    func processDirectory(_ directoryURL: URL,
+                          mode: SortingMode,
+                          isDryRun: Bool = true) async throws -> OrganizationResult {
+
+        // ── Security-scoped URL bookkeeping ───────────────────────────────
         guard let bookmarkData = UserDefaults.standard.data(forKey: "selectedFolderBookmark") else {
-                throw NSError(domain: "FileOrganizerError", code: 1, userInfo: [NSLocalizedDescriptionKey: "No bookmark found"])
-            }
-            
-            var isStale = false
-            let secureURL = try URL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale)
-            
-            guard secureURL.startAccessingSecurityScopedResource() else {
-                throw NSError(domain: "FileOrganizerError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to access directory"])
-            }
-            
-            defer { secureURL.stopAccessingSecurityScopedResource() }
-            
-            let startTime = Date()
-        
-        isProcessing = true
-        progress = 0.0
-        currentStatus = "Scanning directory..."
-        
-        defer {
-            isProcessing = false
+            throw NSError(domain: "FileOrganizerError", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "No bookmark found"])
         }
-        
-        // Step 1: Discover files (QiuYannnn methodology)
+        var isStale = false
+        let secureURL = try URL(resolvingBookmarkData: bookmarkData,
+                                options: .withSecurityScope,
+                                relativeTo: nil,
+                                bookmarkDataIsStale: &isStale)
+        guard secureURL.startAccessingSecurityScopedResource() else {
+            throw NSError(domain: "FileOrganizerError", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "Failed to access directory"])
+        }
+        defer { secureURL.stopAccessingSecurityScopedResource() }
+
+        // ── UI state prep ────────────────────────────────────────────────
+        let startTime = Date()
+        isProcessing  = true
+        progress      = 0
+        currentStatus = "Scanning directory..."
+        defer { isProcessing = false }
+
+        // ── 1. Discover files (token-safe) ───────────────────────────────
         let fileItems = try await discoverFiles(in: directoryURL)
         currentStatus = "Found \(fileItems.count) files"
-        progress = 0.1
-        
-        // Step 2: Process files individually to respect token limits
-        var processedFiles: [FileItem] = []
-        let totalFiles = fileItems.count
-        
-        for (index, fileItem) in fileItems.enumerated() {
-            currentStatus = "Analyzing \(fileItem.name)..."
-            
-            var updatedFileItem = fileItem
-            
+        progress      = 0.1
+
+        // ── 2. Analyse each file ────────────────────────────────────────
+        var processed: [FileItem] = []
+        let total = fileItems.count
+
+        for (idx, file) in fileItems.enumerated() {
+
+            currentStatus = "Analyzing \(file.name)..."
+            var updated   = file
+
             switch mode {
             case .aiIntelligent:
                 if foundationModelsManager.isAvailable {
-                    // Start a fresh model session for this file
                     foundationModelsManager.resetSession()
-                    updatedFileItem.analysisResult = try await analyzeFileWithAI(fileItem)
+                    updated.analysisResult = try await analyzeFileWithAI(file)
                 } else {
-                    updatedFileItem.analysisResult = createFallbackAnalysis(for: fileItem)
+                    updated.analysisResult = createFallbackAnalysis(for: file)
                 }
             case .byDate:
-                updatedFileItem.analysisResult = createDateBasedAnalysis(for: fileItem)
+                updated.analysisResult = createDateBasedAnalysis(for: file)
             case .byType:
-                updatedFileItem.analysisResult = createTypeBasedAnalysis(for: fileItem)
+                updated.analysisResult = createTypeBasedAnalysis(for: file)
             }
-            
-            processedFiles.append(updatedFileItem)
-            progress = 0.1 + (0.7 * Double(index + 1) / Double(totalFiles))
-            
-            // Small delay to prevent overwhelming the system
-            try await Task.sleep(nanoseconds: 10_000_000) // 10ms
+
+            // —— NEW: feed bullet to continuity session ——————————————
+            if let meta = updated.analysisResult {
+                try await DirectorySummarySession.shared.add(
+                    FileMetadata(
+                        primaryCategory : meta.category,
+                        secondaryCategory: meta.subcategory,
+                        suggestedFilename: meta.suggestedName,
+                        summary         : meta.description,
+                        tags            : meta.tags,
+                        confidence      : meta.confidence
+                    )
+                )
+            }
+            // ————————————————————————————————————————————————
+
+            processed.append(updated)
+            progress = 0.1 + 0.7 * Double(idx + 1) / Double(total)
+            try await Task.sleep(nanoseconds: 10_000_000) // 10 ms throttle
         }
-        
+
+        // ── 3. Create & execute organization plan ───────────────────────
         currentStatus = "Creating organization plan..."
-        progress = 0.8
-        
-        // Step 3: Create organization plan
-        let organizationPlan = createOrganizationPlan(
-            files: processedFiles,
-            sourceDirectory: directoryURL,
-            mode: mode
-        )
-        
+        progress      = 0.8
+
+        let plan = createOrganizationPlan(files: processed,
+                                          sourceDirectory: directoryURL,
+                                          mode: mode)
+
         currentStatus = "Executing organization..."
-        progress = 0.9
-        
-        // Step 4: Execute organization (or simulate for dry run)
-        let result = try await executeOrganization(
-            plan: organizationPlan,
-            isDryRun: isDryRun
-        )
-        
-        progress = 1.0
+        progress      = 0.9
+
+        let execResult = try await executeOrganization(plan: plan, isDryRun: isDryRun)
+
+        progress      = 1
         currentStatus = "Complete"
-        
-        let duration = Date().timeIntervalSince(startTime)
-        
+
+        // —— NEW: directory-level advice ——————————
+        let advice: String
+        do {
+            advice = try await DirectorySummarySession.shared.globalAdvice()
+            Logger().info("Continuity advice: \(advice)")
+        } catch {
+            advice = "No advice (error: \(error.localizedDescription))"
+        }
+        // ————————————————————————————————
+
+        // ── 4. Return summary object ────────────────────────────────────
         return OrganizationResult(
-            sourceDirectory: directoryURL.path,
-            targetDirectory: organizationPlan.targetDirectory.path,
-            mode: mode.rawValue,
-            filesProcessed: totalFiles,
-            filesOrganized: result.filesOrganized,
-            categoriesCreated: result.categoriesCreated,
-            isDryRun: isDryRun,
-            duration: duration
+            sourceDirectory   : directoryURL.path,
+            targetDirectory   : plan.targetDirectory.path,
+            mode              : mode.rawValue,
+            filesProcessed    : total,
+            filesOrganized    : execResult.filesOrganized,
+            categoriesCreated : execResult.categoriesCreated,
+            isDryRun          : isDryRun,
+            duration          : Date().timeIntervalSince(startTime)
         )
     }
+
     
     // MARK: - File Discovery (QiuYannnn approach)
     
