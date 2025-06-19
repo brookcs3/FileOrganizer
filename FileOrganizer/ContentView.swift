@@ -13,6 +13,7 @@ import UniformTypeIdentifiers
 
 @available(macOS 26.0, *)
 struct ContentView: View {
+    @Environment(\.testFixtureFolder) private var fixturePath     // ← NEW
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var foundationModelsManager: FoundationModelsManager
     @StateObject private var fileProcessor: FileProcessor
@@ -81,80 +82,87 @@ struct ContentView: View {
                     }
                     
                     Button("Select Directory") {
-                        let openPanel = NSOpenPanel()
-                        openPanel.canChooseDirectories = true
-                        openPanel.canChooseFiles = false
-                        openPanel.allowsMultipleSelection = false
-                        openPanel.message = "Select a folder to organize"
-                        
-                        if openPanel.runModal() == .OK {
-                            if let selectedURL = openPanel.url {
-                                // Save bookmark for persistent access
-                                do {
-                                    let bookmarkData = try selectedURL.bookmarkData(options: .withSecurityScope)
-                                    UserDefaults.standard.set(bookmarkData, forKey: "selectedFolderBookmark")
-                                    appState.selectedDirectory = selectedURL
-                                } catch {
-                                    print("Failed to create bookmark: \(error)")
+
+                        if let path = fixturePath {                        // test run: folder is predefined
+                            appState.selectedDirectory = URL(fileURLWithPath: path)
+
+                        } else {                                           // normal flow: show open-panel
+                            let openPanel = NSOpenPanel()
+                            openPanel.canChooseDirectories   = true
+                            openPanel.canChooseFiles         = false
+                            openPanel.allowsMultipleSelection = false
+                            openPanel.message = "Select a folder to organize"
+
+                            if openPanel.runModal() == .OK {               // ← removed stray comma here
+                                if let selectedURL = openPanel.url {
+                                    do {
+                                        let bookmark = try selectedURL.bookmarkData(options: .withSecurityScope)
+                                        UserDefaults.standard.set(bookmark, forKey: "selectedFolderBookmark")
+                                        appState.selectedDirectory = selectedURL
+                                    } catch {
+                                        print("Failed to create bookmark: \(error)")
+                                    }
                                 }
                             }
                         }
+
                     }
-                    .buttonStyle(.bordered)
-                }
-                .padding(.horizontal)
-                
-                Divider()
-                
-                // Sorting Mode
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("Organization Mode", systemImage: "slider.horizontal.3")
-                        .font(.headline)
+                    .buttonStyle(.bordered)            // view modifiers belong outside the action
+                    .padding(.horizontal)
+
                     
-                    Picker("Mode", selection: $appState.sortingMode) {
-                        ForEach(SortingMode.allCases, id: \.self) { mode in
-                            Text(mode.rawValue).tag(mode)
+                    Divider()
+                    
+                    // Sorting Mode
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("Organization Mode", systemImage: "slider.horizontal.3")
+                            .font(.headline)
+                        
+                        Picker("Mode", selection: $appState.sortingMode) {
+                            ForEach(SortingMode.allCases, id: \.self) { mode in
+                                Text(mode.rawValue).tag(mode)
+                            }
                         }
+                        .pickerStyle(.menu)
+                        
+                        Text(appState.sortingMode.description)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
-                    .pickerStyle(.menu)
+                    .padding(.horizontal)
                     
-                    Text(appState.sortingMode.description)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .padding(.horizontal)
-                
-                Divider()
-                
-                // Dry Run Toggle
-                VStack(alignment: .leading, spacing: 8) {
-                    Toggle("Dry Run Mode", isOn: $appState.isDryRun)
-                        .font(.headline)
+                    Divider()
                     
-                    Text("Preview changes without moving files")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .padding(.horizontal)
-                
-                Spacer()
-                
-                // Navigation Buttons
-                VStack(spacing: 8) {
-                    Button("History") {
-                        showingHistory = true
+                    // Dry Run Toggle
+                    VStack(alignment: .leading, spacing: 8) {
+                        Toggle("Dry Run Mode", isOn: $appState.isDryRun)
+                            .font(.headline)
+                        
+                        Text("Preview changes without moving files")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
-                    .buttonStyle(.bordered)
+                    .padding(.horizontal)
                     
-                    Button("Settings") {
-                        showingSettings = true
+                    Spacer()
+                    
+                    // Navigation Buttons
+                    VStack(spacing: 8) {
+                        Button("History") {
+                            showingHistory = true
+                        }
+                        .buttonStyle(.bordered)
+                        
+                        Button("Settings") {
+                            showingSettings = true
+                        }
+                        .buttonStyle(.bordered)
                     }
-                    .buttonStyle(.bordered)
+                    .padding(.horizontal)
                 }
-                .padding(.horizontal)
-            }
-            .padding(.vertical)
-            .frame(minWidth: 280, maxWidth: 320)
+                .padding(.vertical)
+                .frame(minWidth: 280, maxWidth: 320)
+            } // <-- End of sidebar VStack
             
         } detail: {
             // Main Content
@@ -188,6 +196,7 @@ struct ContentView: View {
                         // Processing View
                         VStack(spacing: 12) {
                             ProgressView(value: fileProcessor.progress)
+                                .accessibilityIdentifier("organizeProgress")      // ← NEW
                                 .progressViewStyle(LinearProgressViewStyle())
                                 .frame(maxWidth: 400)
                             
@@ -225,6 +234,7 @@ struct ContentView: View {
                             Button("Organize Files") {
                                 organizeFiles()
                             }
+                            .accessibilityIdentifier("organizeButton")            // ← NEW
                             .buttonStyle(.borderedProminent)
                             .disabled(appState.selectedDirectory == nil || fileProcessor.isProcessing)
                             .controlSize(.large)
@@ -301,6 +311,11 @@ struct ContentView: View {
             // Update file processor with the actual foundation models manager
             fileProcessor.foundationModelsManager = foundationModelsManager
             
+            // Auto-select fixture when the UI-test injects FIXTURE_PATH
+            if let path = fixturePath, appState.selectedDirectory == nil {
+                appState.selectedDirectory = URL(fileURLWithPath: path)
+            }
+            
             // Load organization history
             Task {
                 do {
@@ -312,7 +327,7 @@ struct ContentView: View {
         }
     }
     
-    private func organizeFiles() {
+    func organizeFiles() {
         guard let directory = appState.selectedDirectory else { return }
         
         Task {
@@ -336,4 +351,3 @@ struct ContentView: View {
         }
     }
 }
-
