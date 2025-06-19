@@ -332,9 +332,8 @@ class FileProcessor: ObservableObject {
     // MARK: - Organization Planning
     
     private func createOrganizationPlan(files: [FileItem], sourceDirectory: URL, mode: SortingMode) -> OrganizationPlan {
-        // Create in Documents folder instead (guaranteed writable)
-        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let targetDirectory = documentsURL.appendingPathComponent("Organized_\(Date().timeIntervalSince1970)")
+        // Organize files in place within the selected directory
+        let targetDirectory = sourceDirectory
         var operations: [FileOperation] = []
         
         // Group files by category
@@ -356,8 +355,8 @@ class FileProcessor: ObservableObject {
             
             // Add file move operations
             for file in categoryFiles {
-                let targetURL = categoryURL.appendingPathComponent(file.analysisResult?.suggestedName ?? file.name)
-                
+                let targetURL = buildTargetURL(for: file, in: categoryURL)
+
                 operations.append(FileOperation(
                     sourceURL: file.url,
                     targetURL: targetURL,
@@ -366,13 +365,29 @@ class FileProcessor: ObservableObject {
                 ))
             }
         }
-        
+
         return OrganizationPlan(
             sourceDirectory: sourceDirectory,
             targetDirectory: targetDirectory,
             operations: operations,
             isDryRun: true
         )
+    }
+
+    /// Builds the final destination URL for a file.
+    ///
+    /// This helper runs *after* AI analysis has completed, so it does not
+    /// consume any model tokens. It simply ensures the original extension is
+    /// preserved if the suggested name does not include one.
+    private func buildTargetURL(for file: FileItem, in categoryURL: URL) -> URL {
+        var baseName = file.analysisResult?.suggestedName ?? file.name
+
+        let hasExtension = !URL(fileURLWithPath: baseName).pathExtension.isEmpty
+        if !hasExtension {
+            baseName += "." + file.fileExtension
+        }
+
+        return categoryURL.appendingPathComponent(baseName)
     }
     
     // MARK: - Organization Execution
