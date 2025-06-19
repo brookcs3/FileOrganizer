@@ -138,7 +138,8 @@ class MetadataStore: ObservableObject {
         }
         
         return contents.compactMap { url in
-            try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize
-        }.reduce(0, +)
+            Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
+        }.reduce(Int64(0), +)
     }
+    
 }

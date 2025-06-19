@@ -1,0 +1,569 @@
+# FileSorter 2.0: Implementation Guide
+
+## Solving Token Limitations and Semantic Understanding
+
+## Issues
+
+**Author** : Manus AI
+
+**Date** : June 18, 2025
+
+**Target** : macOS 26 FileSorter with Apple Foundation Models
+
+**Based on** : QiuYannnn/Local-File-Organizer methodology
+
+## Executive Summary
+
+This implementation guide addresses the specific issues identified in your current
+
+FileSorter implementation: redundant folder creation, inconsistent categorization, and
+
+lack of semantic understanding due to token limitations. By implementing the
+
+QiuYannnn methodology with Apple's Foundation Models, we achieve consistent,
+
+intelligent file organization that understands content context rather than relying on
+
+simple pattern matching.
+
+## Current Problems Analysis
+
+### Problem 1: Redundant Folder Creation
+
+**Current Behavior** : When organizing "Audio Files 96khz" folder, the system creates
+
+another "Audio Files 96khz" folder inside the original, leading to nested redundancy.
+
+**Root Cause** : The current implementation processes the entire directory context in a
+
+single prompt, causing the LLM to suggest folder names based on the parent directory
+
+name rather than analyzing individual file content.
+
+**QiuYannnn Solution** : Per-file analysis eliminates this issue by analyzing each file
+
+individually without parent directory context contamination.
+
+### Problem 2: Inconsistent Categorization
+
+**Current Behavior** : Files like "F_RODE-NTK.wav" and "M_NeumanU47.wav" get random
+
+categorizations like "shootout" with different results each run.
+
+
+**Root Cause** : Token limitations force truncated prompts that lack sufficient context for
+
+the LLM to understand the semantic meaning of filenames and content.
+
+**QiuYannnn Solution** : Each file gets dedicated token space for comprehensive analysis,
+
+enabling consistent recognition of equipment names and patterns.
+
+### Problem 3: Lack of Semantic Understanding
+
+**Current Behavior** : The system fails to recognize "NeumanU47" as a microphone model
+
+or understand the "F_" and "M_" prefixes indicating Female/Male voice samples.
+
+**Root Cause** : Insufficient prompt engineering and token space allocation for domain-
+
+specific knowledge application.
+
+**QiuYannnn Solution** : Specialized analyzers with domain-specific prompts and adequate
+
+token allocation for proper semantic analysis.
+
+## QiuYannnn Methodology Implementation
+
+### Core Architecture Changes
+
+The QiuYannnn methodology fundamentally changes how we approach file analysis by
+
+processing each file individually with dedicated token allocation and specialized
+
+analysis pipelines.
+
+**1. Per-File Token Isolation**
+
+Instead of processing multiple files in a single prompt (which causes token overflow and
+
+context contamination), each file receives its own analysis session:
+
+```
+// BEFORE (Current Implementation - Problematic)
+let prompt = """
+Organize these files: \( allFileNames.joined ( separator: ", " ))
+Parent directory: \( parentDirectory )
+Suggest folder structure...
+"""
+// Result: Token overflow, context contamination, redundant
+folders
+```
+```
+// AFTER (QiuYannnn Methodology - Fixed)
+for file in files {
+let prompt = """
+Analyze this single audio file for categorization:
+```
+```
+Filename: \( file.name )
+```
+
+```
+File type: Audio ( \( file. extension) )
+Technical metadata: \( file.audioMetadata )
+```
+```
+Based on the filename pattern and audio characteristics,
+determine:
+```
+1. Equipment type (microphone model, brand)
+2. Recording context (male/female voice, instrument type)
+3. Appropriate category for organization
+
+```
+Respond with JSON only:
+{
+"equipment_type": "microphone",
+"brand": "Neumann",
+"model": "U47",
+"recording_type": "vocal",
+"gender": "female",
+"category": "Condenser Mics/Female Vocals",
+"confidence": 0.
+}
+"""
+}
+```
+**2. Specialized Audio File Analysis**
+
+For your microphone sample use case, we implement a specialized audio analyzer that
+
+understands audio equipment nomenclature:
+
+```
+class AudioFileAnalyzer : FileAnalyzerProtocol {
+func analyze( _ file: FileInventoryItem) async throws ->
+FileAnalysisResult {
+// Extract audio technical metadata
+let audioMetadata = try extractAudioMetadata(from:
+file.url)
+```
+```
+// Build specialized prompt for audio equipment
+recognition
+let prompt = buildAudioAnalysisPrompt(
+fileName: file.fileName,
+audioMetadata: audioMetadata
+)
+```
+```
+// Analyze with dedicated token allocation
+let response = try await
+foundationModels.analyzeContent(
+prompt,
+fileType: .audio,
+maxContentLength: 2000 // Dedicated token space
+)
+```
+```
+return parseAudioAnalysisResult(response, file: file)
+```
+
+#### }
+
+```
+private func buildAudioAnalysisPrompt(fileName: String,
+audioMetadata: AudioTechnicalMetadata) -> String {
+return """
+Analyze this audio file for intelligent categorization:
+```
+```
+Filename: \( fileName )
+Sample Rate: \( audioMetadata.sampleRate ) Hz
+Channels: \( audioMetadata.channels )
+Duration: \( audioMetadata.duration ) s
+```
+```
+Audio Equipment Recognition Guidelines:
+```
+- Neumann U47, U67, U87: Condenser microphones
+- RODE NTK, NT1: Condenser microphones
+- Shure SM57, SM58: Dynamic microphones
+- Coles 4038, RCA 44: Ribbon microphones
+
+```
+Filename Pattern Analysis:
+```
+- F_ prefix = Female voice sample
+- M_ prefix = Male voice sample
+- Brand_Model format indicates equipment comparison/
+shootout
+
+```
+Determine the most appropriate category structure:
+```
+1. Primary: Microphone type (Condenser/Dynamic/Ribbon)
+2. Secondary: Voice gender or instrument type
+3. Tertiary: Brand/model if relevant
+
+```
+Respond with JSON only:
+{
+"microphone_type": "condenser|dynamic|ribbon|
+unknown",
+"brand": "detected brand name",
+"model": "detected model",
+"recording_subject": "male_vocal|female_vocal|
+instrument|unknown",
+"category_path": "Primary/Secondary/Tertiary",
+"confidence": 0.0-1.0,
+"reasoning": "explanation of categorization logic"
+}
+"""
+}
+}
+```
+**3. Intelligent Category Path Generation**
+
+The system builds hierarchical category paths based on semantic understanding rather
+
+than simple pattern matching:
+
+
+```
+private func generateCategoryPath(from analysis:
+AudioAnalysisResult) -> String {
+var pathComponents: [String] = []
+```
+```
+// Primary categorization by microphone type
+switch analysis.microphoneType {
+case "condenser":
+pathComponents.append("Condenser Microphones")
+case "dynamic":
+pathComponents.append("Dynamic Microphones")
+case "ribbon":
+pathComponents.append("Ribbon Microphones")
+default :
+pathComponents.append("Audio Samples")
+}
+```
+```
+// Secondary categorization by recording subject
+switch analysis.recordingSubject {
+case "male_vocal":
+pathComponents.append("Male Vocals")
+case "female_vocal":
+pathComponents.append("Female Vocals")
+case "instrument":
+pathComponents.append("Instruments")
+default :
+break
+}
+```
+```
+// Tertiary categorization by brand if confidence is high
+if analysis.confidence > 0.8 && !analysis.brand.isEmpty {
+pathComponents.append(analysis.brand)
+}
+```
+```
+return pathComponents.joined(separator: "/")
+}
+```
+### Expected Results for Your Use Case
+
+With the QiuYannnn methodology implemented, your microphone sample folder would
+
+be organized as follows:
+
+**Before (Current Problematic Results):**
+
+```
+Audio Files 96 khz/
+├── Audio Files 96 khz/ ← Redundant folder
+│ ├── shootout/ ← Random categorization
+│ ├── samples/ ← Inconsistent naming
+│ └── misc/ ← Catch-all category
+```
+
+**After (QiuYannnn Methodology Results):**
+
+```
+Audio Files 96khz/
+├── Condenser Microphones/
+│ ├── Female Vocals/
+│ │ ├── Neumann/
+│ │ │ ├── F_NeumanU47.wav
+│ │ │ └── F_NeumanU67.wav
+│ │ └── RODE/
+│ │ ├── F_RODE-NTK.wav
+│ │ └── F_RODE-NT1.wav
+│ └── Male Vocals/
+│ ├── Neumann/
+│ │ ├── M_NeumanU47.wav
+│ │ └── M_NeumanU67.wav
+│ └── RODE/
+│ ├── M_RODE-NTK.wav
+│ └── M_RODE-NT1.wav
+├── Dynamic Microphones/
+│ ├── Female Vocals/
+│ │ └── Shure/
+│ │ ├── F_ShureSM57.wav
+│ │ └── F_ShureSM58.wav
+│ └── Male Vocals/
+│ └── Shure/
+│ ├── M_ShureSM57.wav
+│ └── M_ShureSM58.wav
+└── Ribbon Microphones/
+├── Female Vocals/
+│ └── Coles/
+│ └── F_Coles4038.wav
+└── Male Vocals/
+└── Coles/
+└── M_Coles4038.wav
+```
+## Implementation Strategy
+
+### Phase 1: Core Infrastructure
+
+```
+Implement MetadataStore : Create persistent JSON metadata storage for each
+analyzed file
+Implement PerFileAnalyzer : Core engine that processes files individually
+Implement FileDiscoveryEngine : Inventory system that avoids loading file
+contents
+```
+#### 1.
+
+#### 2.
+
+#### 3.
+
+
+### Phase 2: Specialized Analyzers
+
+```
+AudioFileAnalyzer : Specialized for audio equipment recognition
+ImageFileAnalyzer : Using Vision framework for image content understanding
+DocumentAnalyzer : For document content and structure analysis
+```
+### Phase 3: Intelligent Organization
+
+```
+CategoryDecisionEngine : Makes final organization decisions based on analysis
+OrganizationExecutionEngine : Safely moves files with rollback capabilities
+ValidationEngine : Ensures organization results meet expectations
+```
+## Prompt Engineering for Consistency
+
+### Domain-Specific Knowledge Integration
+
+The key to solving your semantic understanding issues is incorporating domain-specific
+
+knowledge into the prompts:
+
+```
+private func buildDomainSpecificPrompt( for fileType:
+FileTypeCategory) -> String {
+switch fileType {
+case .audio:
+return """
+Audio Equipment Knowledge Base:
+```
+```
+CONDENSER MICROPHONES:
+```
+- Neumann: U47, U67, U87, U89, TLM103, TLM
+- AKG: C12, C414, C
+- RODE: NTK, NT1, NT2, NTG
+- Audio-Technica: AT4040, AT
+
+```
+DYNAMIC MICROPHONES:
+```
+- Shure: SM57, SM58, SM7B, Beta57A
+- Electro-Voice: RE20, RE
+- Sennheiser: MD421, MD
+
+```
+RIBBON MICROPHONES:
+```
+- Coles: 4038, 4040
+- RCA: 44, 77
+- Royer: R-121, R-
+
+```
+FILENAME PATTERNS:
+```
+- F_ = Female voice sample
+- M_ = Male voice sample
+- Brand_Model = Equipment identifier
+- _Close, _Far = Microphone distance
+
+#### 1.
+
+#### 2.
+
+#### 3.
+
+#### 1.
+
+#### 2.
+
+#### 3.
+
+
+- _DI = Direct input recording
+
+```
+Analyze the filename and categorize accordingly.
+"""
+```
+```
+case .image:
+return """
+Image Content Analysis Guidelines:
+```
+```
+SCREENSHOT DETECTION:
+```
+- UI elements, menus, dialogs
+- Desktop environments
+- Application interfaces
+
+```
+DOCUMENT IMAGES:
+```
+- Text-heavy content
+- Scanned documents
+- Receipts, invoices
+
+```
+PHOTOGRAPHY:
+```
+- Natural scenes, portraits
+- Professional photography
+- Personal photos
+
+```
+Analyze visual content and categorize appropriately.
+"""
+```
+```
+default :
+return "Analyze this file for appropriate
+categorization."
+}
+}
+```
+### Consistency Through Structured Responses
+
+Force consistent responses by requiring structured JSON output:
+
+```
+private func enforceStructuredResponse() -> String {
+return """
+IMPORTANT: Respond with valid JSON only. No additional text.
+```
+```
+Required JSON structure:
+{
+"primary_category": "main folder name",
+"secondary_category": "subfolder name or null",
+"tertiary_category": "sub-subfolder name or null",
+"confidence": 0.0-1.0,
+"reasoning": "brief explanation",
+"detected_patterns": ["pattern1", "pattern2"],
+"metadata_tags": ["tag1", "tag2"]
+```
+
+#### }
+
+```
+Example for audio file F_NeumanU47.wav:
+{
+"primary_category": "Condenser Microphones",
+"secondary_category": "Female Vocals",
+"tertiary_category": "Neumann",
+"confidence": 0.95,
+"reasoning": "Neumann U47 is a famous condenser
+microphone, F_ prefix indicates female vocal sample",
+"detected_patterns": ["brand_model_format",
+"gender_prefix"],
+"metadata_tags": ["microphone", "vocal", "condenser",
+"neumann", "u47", "female"]
+}
+"""
+}
+```
+## Error Prevention and Quality Assurance
+
+### Redundant Folder Prevention
+
+```
+class CategoryValidator {
+func validateCategoryPath( _ path: String, parentDirectory:
+String) -> String {
+let pathComponents = path.components(separatedBy: "/")
+let parentName = URL(fileURLWithPath:
+parentDirectory).lastPathComponent
+```
+```
+// Remove redundant parent directory names
+let filteredComponents = pathComponents.filter {
+component in
+!
+component.lowercased().contains(parentName.lowercased())
+}
+```
+```
+// Ensure meaningful categorization
+if filteredComponents.isEmpty ||
+filteredComponents.count == 1 && filteredComponents[ 0 ] ==
+parentName {
+return "Organized Files" // Fallback category
+}
+```
+```
+return filteredComponents.joined(separator: "/")
+}
+}
+```
+
+### Consistency Validation
+
+```
+class ConsistencyValidator {
+private var categoryHistory: [String: Int] = [:]
+```
+```
+func validateConsistency( for category: String, confidence:
+Double) -> Bool {
+categoryHistory[category, default : 0 ] += 1
+```
+```
+// Flag categories that appear too infrequently
+(possible inconsistency)
+let totalFiles = categoryHistory.values.reduce( 0 , +)
+let categoryFrequency =
+Double(categoryHistory[category]!) / Double(totalFiles)
+```
+```
+// If confidence is high but category is very rare, flag
+for review
+return !(confidence > 0.8 && categoryFrequency < 0.
+&& totalFiles > 20 )
+}
+}
+```
+This implementation guide provides the foundation for solving your specific issues with
+
+the FileSorter application. The QiuYannnn methodology, combined with Apple's
+
+Foundation Models and proper prompt engineering, will deliver consistent, intelligent
+
+file organization that understands semantic content rather than relying on simple
+
+pattern matching.

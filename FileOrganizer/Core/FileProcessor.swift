@@ -20,7 +20,7 @@ class FileProcessor: ObservableObject {
     @Published var progress: Double = 0.0
     @Published var currentStatus = ""
     
-    private let foundationModelsManager: FoundationModelsManager
+    var foundationModelsManager: FoundationModelsManager
     private let fileManager = FileManager.default
     
     init(foundationModelsManager: FoundationModelsManager) {
@@ -30,7 +30,22 @@ class FileProcessor: ObservableObject {
     // MARK: - Main Processing Functions
     
     func processDirectory(_ directoryURL: URL, mode: SortingMode, isDryRun: Bool = true) async throws -> OrganizationResult {
-        let startTime = Date()
+        
+        guard let bookmarkData = UserDefaults.standard.data(forKey: "selectedFolderBookmark") else {
+                throw NSError(domain: "FileOrganizerError", code: 1, userInfo: [NSLocalizedDescriptionKey: "No bookmark found"])
+            }
+            
+            var isStale = false
+            let secureURL = try URL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale)
+            
+            guard secureURL.startAccessingSecurityScopedResource() else {
+                throw NSError(domain: "FileOrganizerError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to access directory"])
+            }
+            
+            defer { secureURL.stopAccessingSecurityScopedResource() }
+            
+            let startTime = Date()
+        
         isProcessing = true
         progress = 0.0
         currentStatus = "Scanning directory..."
@@ -122,7 +137,7 @@ class FileProcessor: ObservableObject {
                         .typeIdentifierKey
                     ]
                     
-                    let enumerator = self.fileManager.enumerator(
+                    let enumerator = FileManager.default.enumerator(
                         at: directoryURL,
                         includingPropertiesForKeys: resourceKeys,
                         options: [.skipsHiddenFiles, .skipsPackageDescendants]
@@ -241,7 +256,7 @@ class FileProcessor: ObservableObject {
             category: category,
             subcategory: fileItem.fileExtension.uppercased(),
             suggestedName: fileItem.name,
-            description: "Organized by file type",
+            description: "Organized johnny decimal style",
             tags: [fileItem.fileExtension],
             confidence: 1.0
         )
@@ -275,12 +290,14 @@ class FileProcessor: ObservableObject {
     // MARK: - Organization Planning
     
     private func createOrganizationPlan(files: [FileItem], sourceDirectory: URL, mode: SortingMode) -> OrganizationPlan {
-        let targetDirectory = sourceDirectory.appendingPathComponent("Organized_\(Date().timeIntervalSince1970)")
+        // Create in Documents folder instead (guaranteed writable)
+        let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let targetDirectory = documentsURL.appendingPathComponent("Organized_\(Date().timeIntervalSince1970)")
         var operations: [FileOperation] = []
         
         // Group files by category
         let groupedFiles = Dictionary(grouping: files) { file in
-            file.analysisResult?.displayCategory ?? "Uncategorized"
+            file.analysisResult?.displayCategory ?? "Johnny Decimal Style"
         }
         
         // Create operations for each category

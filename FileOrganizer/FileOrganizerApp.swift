@@ -41,8 +41,7 @@ struct FileOrganizerApp: App {
 
 @available(macOS 26.0, *)
 @MainActor
-@MainActor
-class class AppState: ObservableObject {
+class AppState: ObservableObject {
     @Published var selectedDirectory: URL?
     @Published var sortingMode: SortingMode = .aiIntelligent
     @Published var isProcessing = false
@@ -59,21 +58,3 @@ class class AppState: ObservableObject {
         }
     }
 }
-
-enum SortingMode: String, CaseIterable {
-    case aiIntelligent = "AI Intelligent"
-    case byDate = "By Date"
-    case byType = "By Type"
-    
-    var description: String {
-        switch self {
-        case .aiIntelligent:
-            return "AI analyzes content and organizes intelligently"
-        case .byDate:
-            return "Organize files by modification date"
-        case .byType:
-            return "Organize files by file type"
-        }
-    }
-}
-

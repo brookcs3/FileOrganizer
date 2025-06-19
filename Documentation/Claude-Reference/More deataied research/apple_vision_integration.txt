@@ -1,0 +1,788 @@
+# Apple Vision Integration for Advanced File
+
+# Content Reading
+
+**Research Date** : June 18, 2025
+
+**Author** : Manus AI
+
+**Foundation** : Building on QiuYannnn methodology and Apple ecosystem adaptation
+
+strategy
+
+**Target** : Enhanced file content understanding beyond traditional approaches
+
+## Executive Summary
+
+This document details the comprehensive integration of Apple's Vision framework to
+
+achieve advanced file content reading capabilities that extend beyond QiuYannnn's
+
+original methodology. By leveraging Apple's on-device Vision models, we can extract
+
+semantic meaning from visual content, understand document structure, and provide
+
+intelligent categorization based on actual content rather than just filenames or basic
+
+metadata.
+
+## Vision Framework Capabilities in macOS 26
+
+### Enhanced OCR and Text Recognition
+
+Apple's Vision framework in macOS 26 provides sophisticated text recognition
+
+capabilities:
+
+```
+@available(macOS 26.0, *)
+class AdvancedTextRecognition {
+private let textRecognitionRequest: VNRecognizeTextRequest
+```
+```
+init () {
+textRecognitionRequest = VNRecognizeTextRequest()
+textRecognitionRequest.recognitionLevel = .accurate
+textRecognitionRequest.usesLanguageCorrection = true
+textRecognitionRequest.supportedRecognitionLanguages = [
+"en-US", "es-ES", "fr-FR", "de-DE", "it-IT", "pt-
+BR", "zh-Hans", "zh-Hant", "ja-JP", "ko-KR"
+]
+}
+```
+
+**func** extractTextFromImage( **_** image: NSImage) **async throws** ->
+TextExtractionResult {
+**guard let** cgImage = image.cgImage(forProposedRect: **nil** ,
+context: **nil** , hints: **nil** ) **else** {
+**throw** VisionError.imageConversionFailed
+}
+
+**return try await** withCheckedThrowingContinuation {
+continuation **in**
+textRecognitionRequest.completionHandler = {
+request, error **in
+if let** error = error {
+continuation.resume(throwing: error)
+**return**
+}
+
+**guard let** observations = request.results **as**?
+[VNRecognizedTextObservation] **else** {
+continuation.resume(returning:
+TextExtractionResult.empty)
+**return**
+}
+
+**let** extractedText =
+**self** .processTextObservations(observations)
+continuation.resume(returning: extractedText)
+}
+
+**let** handler = VNImageRequestHandler(cgImage:
+cgImage)
+**do** {
+**try** handler.perform([textRecognitionRequest])
+} **catch** {
+continuation.resume(throwing: error)
+}
+}
+}
+
+**private func** processTextObservations( **_** observations:
+[VNRecognizedTextObservation]) -> TextExtractionResult {
+**var** extractedLines: [TextLine] = []
+**var** confidence: Float = 0.
+
+**for** observation **in** observations {
+**guard let** topCandidate =
+observation.topCandidates( 1 ).first **else** { **continue** }
+
+```
+let textLine = TextLine(
+text: topCandidate.string,
+confidence: topCandidate.confidence,
+boundingBox: observation.boundingBox
+)
+```
+
+```
+extractedLines.append(textLine)
+confidence += topCandidate.confidence
+}
+```
+```
+confidence /= Float(observations.count)
+```
+```
+return TextExtractionResult(
+lines: extractedLines,
+fullText: extractedLines.map {
+$0.text }.joined(separator: " \n "),
+averageConfidence: confidence,
+language: detectLanguage(from: extractedLines)
+)
+}
+}
+```
+### Document Structure Analysis
+
+Advanced document understanding beyond simple text extraction:
+
+```
+@available(macOS 26.0, *)
+class DocumentStructureAnalyzer {
+private let documentRequest:
+VNDetectDocumentSegmentationRequest
+private let rectangleRequest: VNDetectRectanglesRequest
+```
+```
+init () {
+documentRequest = VNDetectDocumentSegmentationRequest()
+rectangleRequest = VNDetectRectanglesRequest()
+rectangleRequest.minimumAspectRatio = 0.
+rectangleRequest.maximumAspectRatio = 3.
+rectangleRequest.minimumSize = 0.
+}
+```
+```
+func analyzeDocumentStructure( _ image: NSImage) async
+throws -> DocumentStructureResult {
+guard let cgImage = image.cgImage(forProposedRect: nil ,
+context: nil , hints: nil ) else {
+throw VisionError.imageConversionFailed
+}
+```
+```
+// Detect document segments (headers, paragraphs,
+tables, etc.)
+let segmentationResult = try await
+performDocumentSegmentation(cgImage)
+```
+```
+// Detect rectangular regions (tables, forms, diagrams)
+let rectangularRegions = try await
+detectRectangularRegions(cgImage)
+```
+
+```
+// Analyze layout and structure
+let layoutAnalysis = analyzeDocumentLayout(
+segments: segmentationResult,
+rectangles: rectangularRegions,
+imageSize: image.size
+)
+```
+```
+return DocumentStructureResult(
+segments: segmentationResult,
+rectangularRegions: rectangularRegions,
+layout: layoutAnalysis,
+documentType: classifyDocumentType(layoutAnalysis)
+)
+}
+```
+```
+private func classifyDocumentType( _ layout: DocumentLayout)
+-> DocumentType {
+// Intelligent document type classification based on
+structure
+if layout.hasTableStructure && layout.hasNumericData {
+return .spreadsheet
+} else if layout.hasSlideLayout &&
+layout.hasLargeImages {
+return .presentation
+} else if layout.hasFormFields {
+return .form
+} else if layout.hasMultiColumnLayout {
+return .article
+} else if layout.hasCodeBlocks {
+return .technicalDocument
+} else {
+return .generalDocument
+}
+}
+}
+```
+### Advanced Image Content Understanding
+
+Beyond basic object detection to semantic scene understanding:
+
+```
+@available(macOS 26.0, *)
+class SemanticImageAnalyzer {
+private let sceneClassificationRequest:
+VNClassifyImageRequest
+private let objectDetectionRequest:
+VNDetectHumanRectanglesRequest
+private let animalDetectionRequest:
+VNRecognizeAnimalsRequest
+private let saliencyRequest:
+VNGenerateAttentionBasedSaliencyImageRequest
+```
+
+**init** () {
+sceneClassificationRequest = VNClassifyImageRequest()
+objectDetectionRequest =
+VNDetectHumanRectanglesRequest()
+animalDetectionRequest = VNRecognizeAnimalsRequest()
+saliencyRequest =
+VNGenerateAttentionBasedSaliencyImageRequest()
+}
+
+**func** analyzeImageContent( **_** image: NSImage) **async throws** ->
+SemanticImageAnalysis {
+**guard let** cgImage = image.cgImage(forProposedRect: **nil** ,
+context: **nil** , hints: **nil** ) **else** {
+**throw** VisionError.imageConversionFailed
+}
+
+_// Perform multiple analysis types in parallel_
+**async let** sceneAnalysis =
+performSceneClassification(cgImage)
+**async let** humanDetection = detectHumans(cgImage)
+**async let** animalDetection = detectAnimals(cgImage)
+**async let** saliencyAnalysis =
+generateSaliencyMap(cgImage)
+
+```
+let results = try await (
+scene: sceneAnalysis,
+humans: humanDetection,
+animals: animalDetection,
+saliency: saliencyAnalysis
+)
+```
+_// Combine results for comprehensive understanding_
+**return** SemanticImageAnalysis(
+sceneClassification: results.scene,
+detectedHumans: results.humans,
+detectedAnimals: results.animals,
+saliencyMap: results.saliency,
+contentSummary: generateContentSummary(from:
+results),
+suggestedCategories:
+generateCategorySuggestions(from: results)
+)
+}
+
+**private func** generateContentSummary(from results: (scene:
+[SceneClassification], humans: [HumanDetection], animals:
+[AnimalDetection], saliency: SaliencyMap)) -> String {
+**var** summary = ""
+
+```
+// Primary scene classification
+if let primaryScene = results.scene.first {
+```
+
+```
+summary += "Scene: \( primaryScene.identifier )
+(confidence: \( String ( format: "%.1f", primaryScene.confidence *
+100 )) %)"
+}
+```
+```
+// Human presence
+if !results.humans.isEmpty {
+summary += ", Contains \( results.humans.count )
+person(s)"
+}
+```
+```
+// Animal presence
+if !results.animals.isEmpty {
+let animalTypes = Set(results.animals.map {
+$0.animalType })
+summary += ", Contains \
+( animalTypes.joined ( separator: ", " )) "
+}
+```
+```
+// Focus areas
+if results.saliency.hasStrongFocus {
+summary += ", Clear focal point detected"
+}
+```
+```
+return summary
+}
+}
+```
+## Enhanced PDF Processing with Vision
+
+Building on our DocumentFileAnalyzer.swift foundation:
+
+```
+@available(macOS 26.0, *)
+class VisionEnhancedPDFProcessor {
+private let textRecognizer: AdvancedTextRecognition
+private let structureAnalyzer: DocumentStructureAnalyzer
+private let imageAnalyzer: SemanticImageAnalyzer
+```
+```
+init () {
+self .textRecognizer = AdvancedTextRecognition()
+self .structureAnalyzer = DocumentStructureAnalyzer()
+self .imageAnalyzer = SemanticImageAnalyzer()
+}
+```
+```
+func processEnhancedPDF( _ url: URL) async throws ->
+EnhancedPDFAnalysis {
+guard let document = PDFDocument(url: url) else {
+throw PDFError.cannotOpenDocument
+}
+```
+
+```
+var pageAnalyses: [PDFPageAnalysis] = []
+var extractedImages: [ExtractedImage] = []
+var documentStructure = DocumentStructure()
+```
+_// Process each page with comprehensive analysis_
+**for** pageIndex **in** 0..<min(document.pageCount, 10 ) { _//
+Limit for performance_
+**guard let** page = document.page(at: pageIndex) **else**
+{ **continue** }
+
+_// Generate high-quality page image_
+**let** pageImage = page.thumbnail(of: CGSize(width:
+1200 , height: 1600 ), **for** : .mediaBox)
+
+_// Perform comprehensive analysis_
+**async let** textAnalysis =
+textRecognizer.extractTextFromImage(pageImage)
+**async let** structureAnalysis =
+structureAnalyzer.analyzeDocumentStructure(pageImage)
+**async let** imageAnalysis =
+extractAndAnalyzeImages(from: page)
+
+```
+let results = try await (
+text: textAnalysis,
+structure: structureAnalysis,
+images: imageAnalysis
+)
+```
+```
+let pageAnalysis = PDFPageAnalysis(
+pageNumber: pageIndex + 1 ,
+textContent: results.text,
+structure: results.structure,
+extractedImages: results.images
+)
+```
+```
+pageAnalyses.append(pageAnalysis)
+extractedImages.append(contentsOf: results.images)
+documentStructure.incorporate(results.structure)
+}
+```
+_// Generate comprehensive document understanding_
+**let** documentClassification = classifyDocument(
+structure: documentStructure,
+content: pageAnalyses.map {
+$0.textContent.fullText }.joined(separator: " **\n** "),
+images: extractedImages
+)
+
+```
+return EnhancedPDFAnalysis(
+pageCount: document.pageCount,
+pageAnalyses: pageAnalyses,
+```
+
+```
+documentStructure: documentStructure,
+extractedImages: extractedImages,
+documentClassification: documentClassification,
+contentSummary:
+generateDocumentSummary(pageAnalyses),
+suggestedCategories:
+generateCategorySuggestions(documentClassification)
+)
+}
+```
+```
+private func extractAndAnalyzeImages(from page: PDFPage)
+async throws -> [ExtractedImage] {
+var extractedImages: [ExtractedImage] = []
+```
+```
+// Extract embedded images from PDF page
+// This is a simplified representation - actual
+implementation would use Core Graphics
+let pageRect = page.bounds( for : .mediaBox)
+let pageImage = page.thumbnail(of: pageRect.size,
+for : .mediaBox)
+```
+```
+// Use Vision to detect image regions
+let imageRegions = try await detectImageRegions( in :
+pageImage)
+```
+```
+for region in imageRegions {
+let croppedImage = cropImage(pageImage, to:
+region.boundingBox)
+let imageAnalysis = try await
+imageAnalyzer.analyzeImageContent(croppedImage)
+```
+```
+extractedImages.append(ExtractedImage(
+image: croppedImage,
+boundingBox: region.boundingBox,
+analysis: imageAnalysis
+))
+}
+```
+```
+return extractedImages
+}
+}
+```
+## Video Content Analysis
+
+Extending beyond QiuYannnn's capabilities to video understanding:
+
+```
+@available(macOS 26.0, *)
+class VisionVideoAnalyzer {
+private let imageAnalyzer: SemanticImageAnalyzer
+```
+
+```
+private let textRecognizer: AdvancedTextRecognition
+```
+**func** analyzeVideoContent( **_** url: URL) **async throws** ->
+VideoContentAnalysis {
+**let** asset = AVAsset(url: url)
+**let** duration = **try await** asset.load(.duration)
+**let** durationSeconds = CMTimeGetSeconds(duration)
+
+_// Sample key frames at strategic intervals_
+**let** sampleTimes = generateSampleTimes(duration:
+durationSeconds)
+**var** frameAnalyses: [VideoFrameAnalysis] = []
+**var** detectedText: [TimestampedText] = []
+**var** sceneTransitions: [SceneTransition] = []
+
+**let** imageGenerator = AVAssetImageGenerator(asset: asset)
+imageGenerator.appliesPreferredTrackTransform = **true**
+imageGenerator.maximumSize = CGSize(width: 1920 ,
+height: 1080 )
+
+**for** sampleTime **in** sampleTimes {
+**do** {
+**let** cgImage = **try await**
+imageGenerator.image(at: sampleTime).image
+**let** frameImage = NSImage(cgImage: cgImage,
+size: NSSize(width: cgImage.width, height: cgImage.height))
+
+_// Analyze frame content_
+**async let** imageAnalysis =
+imageAnalyzer.analyzeImageContent(frameImage)
+**async let** textAnalysis =
+textRecognizer.extractTextFromImage(frameImage)
+
+**let** results = **try await** (image: imageAnalysis,
+text: textAnalysis)
+
+```
+let frameAnalysis = VideoFrameAnalysis(
+timestamp: CMTimeGetSeconds(sampleTime),
+imageAnalysis: results.image,
+extractedText: results.text
+)
+```
+```
+frameAnalyses.append(frameAnalysis)
+```
+_// Collect timestamped text_
+**if** !results.text.fullText.isEmpty {
+detectedText.append(TimestampedText(
+text: results.text.fullText,
+timestamp: CMTimeGetSeconds(sampleTime),
+confidence:
+results.text.averageConfidence
+))
+
+
+#### }
+
+```
+} catch {
+// Continue with other frames if one fails
+continue
+}
+}
+```
+```
+// Detect scene transitions
+sceneTransitions = detectSceneTransitions(frameAnalyses)
+```
+```
+// Classify video type
+let videoClassification = classifyVideoType(
+frameAnalyses: frameAnalyses,
+detectedText: detectedText,
+duration: durationSeconds
+)
+```
+**return** VideoContentAnalysis(
+duration: durationSeconds,
+frameAnalyses: frameAnalyses,
+detectedText: detectedText,
+sceneTransitions: sceneTransitions,
+videoClassification: videoClassification,
+contentSummary: generateVideoSummary(frameAnalyses,
+detectedText),
+suggestedCategories:
+generateVideoCategorySuggestions(videoClassification)
+)
+}
+
+**private func** classifyVideoType(frameAnalyses:
+[VideoFrameAnalysis], detectedText: [TimestampedText],
+duration: Double) -> VideoClassification {
+**let** hasConsistentUI = frameAnalyses.allSatisfy {
+$0.imageAnalysis.sceneClassification.contains {
+$0.identifier.contains("interface") } }
+**let** hasFrequentText = detectedText.count >
+frameAnalyses.count * 0.
+**let** isShortForm = duration < 60
+**let** hasHumans = frameAnalyses.contains {!
+$0.imageAnalysis.detectedHumans.isEmpty }
+
+```
+if hasConsistentUI && hasFrequentText {
+return .screenRecording
+} else if hasFrequentText && !hasHumans {
+return .tutorial
+} else if isShortForm && hasHumans {
+return .socialMedia
+} else if duration > 1800 { // 30 minutes
+return .movie
+} else if hasHumans && duration > 300 { // 5 minutes
+```
+
+```
+return .presentation
+} else {
+return .general
+}
+}
+}
+```
+## Audio File Content Analysis
+
+Extending to audio content understanding:
+
+```
+@available(macOS 26.0, *)
+class AudioContentAnalyzer {
+private let speechRecognizer: SFSpeechRecognizer
+private let audioEngine: AVAudioEngine
+```
+```
+init () throws {
+guard let recognizer = SFSpeechRecognizer(locale:
+Locale(identifier: "en-US")) else {
+throw
+AudioAnalysisError.speechRecognitionNotAvailable
+}
+self .speechRecognizer = recognizer
+self .audioEngine = AVAudioEngine()
+}
+```
+```
+func analyzeAudioContent( _ url: URL) async throws ->
+AudioContentAnalysis {
+// Extract audio metadata
+let audioMetadata = try await extractAudioMetadata(url)
+```
+```
+// Perform speech recognition if audio contains speech
+let speechAnalysis = try await
+performSpeechRecognition(url)
+```
+```
+// Analyze audio characteristics
+let audioCharacteristics = try await
+analyzeAudioCharacteristics(url)
+```
+```
+// Classify audio type
+let audioClassification = classifyAudioType(
+metadata: audioMetadata,
+speech: speechAnalysis,
+characteristics: audioCharacteristics
+)
+```
+```
+return AudioContentAnalysis(
+duration: audioMetadata.duration,
+speechContent: speechAnalysis,
+```
+
+audioCharacteristics: audioCharacteristics,
+audioClassification: audioClassification,
+contentSummary:
+generateAudioSummary(speechAnalysis, audioCharacteristics),
+suggestedCategories:
+generateAudioCategorySuggestions(audioClassification)
+)
+}
+
+**private func** performSpeechRecognition( **_** url: URL) **async
+throws** -> SpeechAnalysisResult {
+**let** request = SFSpeechURLRecognitionRequest(url: url)
+request.shouldReportPartialResults = **false**
+request.taskHint = .dictation
+
+**return try await** withCheckedThrowingContinuation {
+continuation **in**
+speechRecognizer.recognitionTask(with: request) {
+result, error **in
+if let** error = error {
+continuation.resume(throwing: error)
+**return**
+}
+
+**guard let** result = result, result.isFinal **else**
+{ **return** }
+
+**let** speechResult = SpeechAnalysisResult(
+transcription:
+result.bestTranscription.formattedString,
+confidence:
+result.bestTranscription.segments.map {
+$0.confidence }.reduce( 0 , +) /
+Float(result.bestTranscription.segments.count),
+detectedLanguage:
+**self** .speechRecognizer.locale.identifier,
+speakerCount:
+**self** .estimateSpeakerCount(result.bestTranscription),
+topics: **self** .extractTopics(from:
+result.bestTranscription.formattedString)
+)
+
+continuation.resume(returning: speechResult)
+}
+}
+}
+}
+
+
+## Integration with Foundation Models
+
+Combining Vision analysis with Apple's Foundation Models for enhanced understanding:
+
+```
+@available(macOS 26.0, *)
+class VisionFoundationModelsIntegration {
+private let systemModel: SystemLanguageModel
+private let visionAnalyzers: VisionAnalyzerSuite
+```
+```
+init () async throws {
+self .systemModel =
+SystemLanguageModel(useCase: .contentTagging)
+self .visionAnalyzers = VisionAnalyzerSuite()
+}
+```
+```
+func analyzeFileWithVisionAndLLM( _ file: FileInventoryItem)
+async throws -> EnhancedFileAnalysis {
+// Step 1: Extract content using Vision
+let visionResults = try await
+extractContentWithVision(file)
+```
+```
+// Step 2: Analyze with Foundation Models
+let llmAnalysis = try await analyzeWithFoundationModels(
+visionResults: visionResults,
+fileMetadata: file
+)
+```
+```
+// Step 3: Combine and enhance results
+return EnhancedFileAnalysis(
+fileID: file.id,
+fileName: file.fileName,
+visionAnalysis: visionResults,
+llmAnalysis: llmAnalysis,
+combinedInsights:
+generateCombinedInsights(visionResults, llmAnalysis),
+enhancedCategorization:
+generateEnhancedCategorization(visionResults, llmAnalysis)
+)
+}
+```
+```
+private func analyzeWithFoundationModels(visionResults:
+VisionAnalysisResults, fileMetadata: FileInventoryItem) async
+throws -> LLMAnalysisResult {
+let prompt = buildEnhancedPrompt(visionResults:
+visionResults, fileMetadata: fileMetadata)
+```
+```
+let session = try await LanguageModelSession(
+systemModel,
+instructions: Instructions(prompt)
+)
+```
+
+```
+let response = try await session.generate(
+prompt: Prompt(buildAnalysisRequest(visionResults)),
+options: GenerationOptions(maxTokens: 512 )
+)
+```
+```
+return try parseEnhancedLLMResponse(response.content)
+}
+```
+```
+private func buildEnhancedPrompt(visionResults:
+VisionAnalysisResults, fileMetadata: FileInventoryItem) ->
+String {
+return """
+You are an expert file organization assistant. Analyze
+the following file using both technical metadata and visual/
+content analysis results.
+```
+```
+File Information:
+```
+- Filename: **\(** fileMetadata.fileName **)**
+- File Type: **\(** fileMetadata.fileTypeCategory.rawValue **)**
+- File Size: **\(** ByteCountFormatter.string **(** fromByteCount:
+fileMetadata.fileSize, countStyle: .file **))**
+
+```
+Vision Analysis Results:
+\( formatVisionResults ( visionResults ))
+```
+```
+Based on this comprehensive analysis, provide
+intelligent categorization that considers:
+```
+1. Actual content (not just filename)
+2. Visual elements and structure
+3. Semantic meaning and context
+4. Appropriate organizational hierarchy
+
+```
+Respond with structured categorization that creates
+meaningful, discoverable organization.
+"""
+}
+}
+```
+This comprehensive Vision integration extends far beyond QiuYannnn's original
+
+capabilities, providing deep content understanding that enables truly intelligent file
+
+organization based on actual content rather than superficial characteristics.

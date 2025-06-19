@@ -141,7 +141,7 @@ struct HistoryDetailView: View {
                         }
                     }
                     
-                    Text(result.timestamp, style: .complete)
+                    Text(result.timestamp.formatted())
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

@@ -24,38 +24,35 @@ class FoundationModelsManager: ObservableObject {
     private let maxTokens = 4096 // Apple LLM token limit
     
     func initialize() async {
-        do {
-            let systemModel = SystemLanguageModel.default
-            self.model = systemModel
+        let systemModel = SystemLanguageModel.default
+        self.model = systemModel
+        
+        switch systemModel.availability {
+        case .available:
+            self.isAvailable = true
+            self.availabilityStatus = "Foundation Model Available"
             
-            switch systemModel.availability {
-            case .available:
-                self.isAvailable = true
-                self.availabilityStatus = "Apple Intelligence Available"
-                
-                // Create a session for file analysis
-                let session = try await systemModel.session()
-                self.session = session
-                
-            case .unavailable(.deviceNotEligible):
-                self.isAvailable = false
-                self.availabilityStatus = "Device not eligible for Apple Intelligence"
-                
-            case .unavailable(.appleIntelligenceNotEnabled):
-                self.isAvailable = false
-                self.availabilityStatus = "Apple Intelligence not enabled in Settings"
-                
-            case .unavailable(.modelNotReady):
-                self.isAvailable = false
-                self.availabilityStatus = "Model downloading or not ready"
-                
-            case .unavailable(let other):
-                self.isAvailable = false
-                self.availabilityStatus = "Model unavailable: \(other)"
-            }
-        } catch {
+            // Create a session for file analysis
+            let session = LanguageModelSession(instructions: """
+                You are a file organization assistant that analyzes file content and provides categorization metadata.
+                """)
+            self.session = session
+
+        case .unavailable(.deviceNotEligible):
             self.isAvailable = false
-            self.availabilityStatus = "Error initializing: \(error.localizedDescription)"
+            self.availabilityStatus = "Device not eligible for Foundation Model"
+            
+        case .unavailable(.appleIntelligenceNotEnabled):
+            self.isAvailable = false
+            self.availabilityStatus = "Foundation Model not enabled in Settings"
+            
+        case .unavailable(.modelNotReady):
+            self.isAvailable = false
+            self.availabilityStatus = "Model downloading or not ready"
+            
+        case .unavailable(let other):
+            self.isAvailable = false
+            self.availabilityStatus = "Model unavailable: \(other)"
         }
     }
     
@@ -82,10 +79,8 @@ class FoundationModelsManager: ObservableObject {
         - tags: array of relevant tags
         """
         
-        let instructions = Instructions(prompt: prompt)
-        
         do {
-            let response = try await session.generate(instructions: instructions)
+            let response = try await session.respond(to: prompt)
             return try parseAnalysisResponse(response.content, originalFileName: fileName)
         } catch {
             // Fallback to basic analysis if AI fails
@@ -99,7 +94,7 @@ class FoundationModelsManager: ObservableObject {
            let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] {
             
             return FileAnalysisResult(
-                category: json["category"] as? String ?? "Uncategorized",
+                category: json["category"] as? String ?? "Johnny.Decimal",
                 subcategory: json["subcategory"] as? String,
                 suggestedName: json["suggestedName"] as? String ?? originalFileName,
                 description: json["description"] as? String ?? "",
@@ -134,10 +129,10 @@ class FoundationModelsManager: ObservableObject {
         }
         
         return FileAnalysisResult(
-            category: category,
-            subcategory: nil,
-            suggestedName: originalFileName,
-            description: description,
+            category: "johnny decimal category",
+            subcategory: "johnny.decimal subcategory",
+            suggestedName: "johnny.decimal suggested name",
+            description: "johnny.decimal description",
             tags: [],
             confidence: 0.6
         )
@@ -157,23 +152,9 @@ class FoundationModelsManager: ObservableObject {
     }
     
     private func determineCategoryFromFileType(_ fileType: String) -> String {
-        let type = fileType.lowercased()
-        
-        if ["jpg", "jpeg", "png", "gif", "bmp", "tiff", "heic"].contains(type) {
-            return "Images"
-        } else if ["pdf", "doc", "docx", "txt", "rtf", "md"].contains(type) {
-            return "Documents"
-        } else if ["xls", "xlsx", "csv", "numbers"].contains(type) {
-            return "Spreadsheets"
-        } else if ["ppt", "pptx", "key"].contains(type) {
-            return "Presentations"
-        } else if ["mp3", "wav", "aac", "m4a", "flac"].contains(type) {
-            return "Audio"
-        } else if ["mp4", "mov", "avi", "mkv", "wmv"].contains(type) {
-            return "Videos"
-        } else {
-            return "Other"
-        }
+        // Minimal fallback - don't do algorithmic categorization
+        // The whole point is to use AI, not file extensions
+        return "Uncategorized"
     }
 }
 

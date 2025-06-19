@@ -9,14 +9,25 @@
 
 import Foundation
 
-struct FileAnalysisResult: Codable, Identifiable {
-    let id = UUID()
+struct FileAnalysisResult: @preconcurrency Codable, Identifiable {
+    let id: UUID
     let category: String
     let subcategory: String?
     let suggestedName: String
     let description: String
     let tags: [String]
     let confidence: Double
+    
+    // ADD this initializer:
+    init(category: String, subcategory: String?, suggestedName: String, description: String, tags: [String], confidence: Double) {
+        self.id = UUID()
+        self.category = category
+        self.subcategory = subcategory
+        self.suggestedName = suggestedName
+        self.description = description
+        self.tags = tags
+        self.confidence = confidence
+    }
     
     var displayCategory: String {
         if let subcategory = subcategory {
@@ -26,9 +37,10 @@ struct FileAnalysisResult: Codable, Identifiable {
     }
 }
 
-struct OrganizationResult: Identifiable, Codable {
-    let id = UUID()
-    let timestamp = Date()
+
+struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable {
+    let id: UUID
+    let timestamp: Date
     let sourceDirectory: String
     let targetDirectory: String
     let mode: String
@@ -38,11 +50,25 @@ struct OrganizationResult: Identifiable, Codable {
     let isDryRun: Bool
     let duration: TimeInterval
     
+    init(sourceDirectory: String, targetDirectory: String, mode: String, filesProcessed: Int, filesOrganized: Int, categoriesCreated: [String], isDryRun: Bool, duration: TimeInterval) {
+        self.id = UUID()
+        self.timestamp = Date()
+        self.sourceDirectory = sourceDirectory
+        self.targetDirectory = targetDirectory
+        self.mode = mode  // Fix: assign mode
+        self.filesProcessed = filesProcessed
+        self.filesOrganized = filesOrganized
+        self.categoriesCreated = categoriesCreated  // Fix: assign categoriesCreated
+        self.isDryRun = isDryRun
+        self.duration = duration
+    }
+    
     var summary: String {
         let action = isDryRun ? "Would organize" : "Organized"
         return "\(action) \(filesOrganized)/\(filesProcessed) files into \(categoriesCreated.count) categories"
     }
 }
+
 
 struct FileItem: Identifiable {
     let id = UUID()
@@ -89,7 +115,7 @@ struct FileOperation {
 
 // MARK: - Settings Models
 
-struct AppSettings: Codable {
+struct AppSettings: @preconcurrency Codable {
     var defaultSortingMode: SortingMode = .aiIntelligent
     var enableDryRunByDefault = true
     var maxFilesPerBatch = 100
@@ -125,7 +151,7 @@ enum SortingMode: String, CaseIterable, Codable {
     var description: String {
         switch self {
         case .aiIntelligent:
-            return "Uses Apple Intelligence to analyze file content and create semantic categories"
+            return "Uses Apple Intelligence to analyze file content and create semantic categories in a Johnny.Decimal style"
         case .byDate:
             return "Organizes files by modification date in year/month structure"
         case .byType:

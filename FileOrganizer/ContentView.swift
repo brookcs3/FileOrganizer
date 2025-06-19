@@ -81,7 +81,24 @@ struct ContentView: View {
                     }
                     
                     Button("Select Directory") {
-                        showingDirectoryPicker = true
+                        let openPanel = NSOpenPanel()
+                        openPanel.canChooseDirectories = true
+                        openPanel.canChooseFiles = false
+                        openPanel.allowsMultipleSelection = false
+                        openPanel.message = "Select a folder to organize"
+                        
+                        if openPanel.runModal() == .OK {
+                            if let selectedURL = openPanel.url {
+                                // Save bookmark for persistent access
+                                do {
+                                    let bookmarkData = try selectedURL.bookmarkData(options: .withSecurityScope)
+                                    UserDefaults.standard.set(bookmarkData, forKey: "selectedFolderBookmark")
+                                    appState.selectedDirectory = selectedURL
+                                } catch {
+                                    print("Failed to create bookmark: \(error)")
+                                }
+                            }
+                        }
                     }
                     .buttonStyle(.bordered)
                 }
