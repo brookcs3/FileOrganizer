@@ -22,6 +22,10 @@ struct FileOrganizerApp: App {
             ContentView()
                 .environmentObject(appState)
                 .environmentObject(foundationModelsManager)
+                // ↓↓↓ add this line ↓↓↓
+            .environment(\.testFixtureFolder,
+                          ProcessInfo.processInfo.environment["FIXTURE_PATH"])
+            // ↑↑↑ add this line ↑↑↑
                 .onAppear {
                     Task {
                         await foundationModelsManager.initialize()

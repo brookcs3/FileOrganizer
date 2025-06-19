@@ -71,6 +71,8 @@ class FileProcessor: ObservableObject {
             switch mode {
             case .aiIntelligent:
                 if foundationModelsManager.isAvailable {
+                    // Start a fresh model session for this file
+                    foundationModelsManager.resetSession()
                     updatedFileItem.analysisResult = try await analyzeFileWithAI(fileItem)
                 } else {
                     updatedFileItem.analysisResult = createFallbackAnalysis(for: fileItem)
@@ -189,11 +191,11 @@ class FileProcessor: ObservableObject {
         // Limit content extraction to respect token limits
         switch fileType {
         case "txt", "md", "rtf":
-            return try extractTextContent(from: fileItem.url, maxLength: 2000)
+            return try extractTextContent(from: fileItem.url, maxLength: 566)
         case "pdf":
-            return try extractPDFContent(from: fileItem.url, maxLength: 2000)
+            return try extractPDFContent(from: fileItem.url, maxLength: 566)
         case "docx", "doc":
-            return try extractDocumentContent(from: fileItem.url, maxLength: 2000)
+            return try extractDocumentContent(from: fileItem.url, maxLength: 566)
         case "jpg", "jpeg", "png", "gif", "bmp", "tiff", "heic":
             return "Image file: \(fileItem.name)"
         default:
@@ -256,7 +258,7 @@ class FileProcessor: ObservableObject {
             category: category,
             subcategory: fileItem.fileExtension.uppercased(),
             suggestedName: fileItem.name,
-            description: "Organized johnny decimal style",
+            description: "Organized by file type",
             tags: [fileItem.fileExtension],
             confidence: 1.0
         )
@@ -297,7 +299,7 @@ class FileProcessor: ObservableObject {
         
         // Group files by category
         let groupedFiles = Dictionary(grouping: files) { file in
-            file.analysisResult?.displayCategory ?? "Johnny Decimal Style"
+            file.analysisResult?.displayCategory ?? "Uncategorized"
         }
         
         // Create operations for each category
@@ -336,7 +338,7 @@ class FileProcessor: ObservableObject {
     // MARK: - Organization Execution
     
     private func executeOrganization(plan: OrganizationPlan, isDryRun: Bool) async throws -> (filesOrganized: Int, categoriesCreated: [String]) {
-        var filesOrganized = 0
+        var filesOrganized: Int? = nil
         var categoriesCreated: Set<String> = []
         
         if !isDryRun {
@@ -356,17 +358,17 @@ class FileProcessor: ObservableObject {
                 if !isDryRun {
                     try fileManager.moveItem(at: operation.sourceURL, to: operation.targetURL)
                 }
-                filesOrganized += 1
+                filesOrganized = (filesOrganized ?? 0) + 1
                 
             case .copy:
                 if !isDryRun {
                     try fileManager.copyItem(at: operation.sourceURL, to: operation.targetURL)
                 }
-                filesOrganized += 1
+                filesOrganized = (filesOrganized ?? 0) + 1
             }
         }
         
-        return (filesOrganized: filesOrganized, categoriesCreated: Array(categoriesCreated))
+        return (filesOrganized: filesOrganized ?? 0, categoriesCreated: Array(categoriesCreated))
     }
 }
 

@@ -151,7 +151,7 @@ enum SortingMode: String, CaseIterable, Codable {
     var description: String {
         switch self {
         case .aiIntelligent:
-            return "Uses Apple Intelligence to analyze file content and create semantic categories in a Johnny.Decimal style"
+            return "Uses Apple Intelligence to analyze file content and create semantic categories for organizing"
         case .byDate:
             return "Organizes files by modification date in year/month structure"
         case .byType:

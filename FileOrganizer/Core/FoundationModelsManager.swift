@@ -13,8 +13,28 @@ import FoundationModels
 import SwiftUI
 import Combine
 
+@Generable
+struct FileMetadata{
+    @Guide(description: "Primary category name")
+    var primaryCategory: String
+
+    @Guide(description: "Secondary category name, optional")
+    var secondaryCategory: String?
+
+    @Guide(description: "Suggested filename without extension")
+    var suggestedFilename: String
+
+    @Guide(description: "One-sentence summary")
+    var summary: String?
+
+    @Guide(description: "Relevant tags")
+    var tags: [String]
+
+    var confidence: Double
+}
+
 @available(macOS 26.0, *)
-@MainActor
+
 class FoundationModelsManager: ObservableObject {
     @Published var isAvailable = false
     @Published var availabilityStatus: String = "Checking..."
@@ -37,7 +57,7 @@ class FoundationModelsManager: ObservableObject {
                 You are a file organization assistant that analyzes file content and provides categorization metadata.
                 """)
             self.session = session
-
+            
         case .unavailable(.deviceNotEligible):
             self.isAvailable = false
             self.availabilityStatus = "Device not eligible for Foundation Model"
@@ -54,91 +74,57 @@ class FoundationModelsManager: ObservableObject {
             self.isAvailable = false
             self.availabilityStatus = "Model unavailable: \(other)"
         }
+        
     }
     
-    func analyzeFileContent(_ content: String, fileName: String, fileType: String) async throws -> FileAnalysisResult {
-        guard let session = session else {
-            throw FoundationModelsError.sessionNotAvailable
-        }
+    /// Resets the Foundation Models session, ensuring a fresh context for each file.
+    func resetSession() {
+        guard let model = self.model else { return }
+        let session = LanguageModelSession(instructions: """
+            You are a file organization assistant that analyzes file content and provides categorization metadata.
+            """)
+        self.session = session
+    }
+    
+    func analyzeFileContent(_ content: String,
+                            fileName: String,
+                            fileType: String) async throws -> FileAnalysisResult {
         
-        // Truncate content to respect token limits (conservative estimate)
-        let truncatedContent = String(content.prefix(3000)) // Leave room for prompt
+        guard let session else { throw FoundationModelsError.sessionNotAvailable }
         
+        let safeContent = String(content.prefix(3_000))
         let prompt = """
-        Analyze this file and provide organization metadata:
-        
-        File: \(fileName)
-        Type: \(fileType)
-        Content: \(truncatedContent)
-        
-        Provide a JSON response with:
-        - category: main category for organization
-        - subcategory: optional subcategory
-        - suggestedName: improved filename
-        - description: brief content description
-        - tags: array of relevant tags
-        """
-        
-        do {
-            let response = try await session.respond(to: prompt)
-            return try parseAnalysisResponse(response.content, originalFileName: fileName)
-        } catch {
-            // Fallback to basic analysis if AI fails
-            return createFallbackAnalysis(fileName: fileName, fileType: fileType)
-        }
-    }
-    
-    private func parseAnalysisResponse(_ response: String, originalFileName: String) throws -> FileAnalysisResult {
-        // Try to extract JSON from response
-        if let jsonData = response.data(using: .utf8),
-           let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] {
+            Analyze this file and generate organization metadata.\n\n
             
-            return FileAnalysisResult(
-                category: json["category"] as? String ?? "Johnny.Decimal",
-                subcategory: json["subcategory"] as? String,
-                suggestedName: json["suggestedName"] as? String ?? originalFileName,
-                description: json["description"] as? String ?? "",
-                tags: json["tags"] as? [String] ?? [],
-                confidence: 0.8
+            Filename: \(fileName)\n
+            Type: \(fileType)\n
+            Content (may be truncated): \(safeContent)
+            """
+        
+        let temperature = 0.2
+        
+        let opts = GenerationOptions(temperature: temperature)
+        
+        let response = try await session.respond(
+            to: prompt,
+            generating: FileMetadata.self,
+            includeSchemaInPrompt: false,
+            options: opts
             )
-        } else {
-            // Parse from natural language response
-            return parseNaturalLanguageResponse(response, originalFileName: originalFileName)
-        }
-    }
-    
-    private func parseNaturalLanguageResponse(_ response: String, originalFileName: String) -> FileAnalysisResult {
-        // Simple parsing for natural language responses
-        let lines = response.components(separatedBy: .newlines)
-        var category = "Uncategorized"
-        var description = ""
         
-        for line in lines {
-            let lowercased = line.lowercased()
-            if lowercased.contains("category") || lowercased.contains("type") {
-                if lowercased.contains("document") { category = "Documents" }
-                else if lowercased.contains("image") || lowercased.contains("photo") { category = "Images" }
-                else if lowercased.contains("work") || lowercased.contains("business") { category = "Work" }
-                else if lowercased.contains("personal") { category = "Personal" }
-                else if lowercased.contains("financial") || lowercased.contains("money") { category = "Financial" }
-            }
-            
-            if lowercased.contains("description") || lowercased.contains("about") {
-                description = line
-            }
-        }
-        
+        let meta = response.content
+        // Convert to your existing FileAnalysisResult
         return FileAnalysisResult(
-            category: "johnny decimal category",
-            subcategory: "johnny.decimal subcategory",
-            suggestedName: "johnny.decimal suggested name",
-            description: "johnny.decimal description",
-            tags: [],
-            confidence: 0.6
+            category      : meta.primaryCategory,
+            subcategory   : meta.secondaryCategory,
+            suggestedName : meta.suggestedFilename,
+            description   : meta.summary ?? "",
+            tags          : meta.tags,
+            confidence    : meta.confidence
         )
     }
     
-    private func createFallbackAnalysis(fileName: String, fileType: String) -> FileAnalysisResult {
+    func createFallbackAnalysis(fileName: String, fileType: String) -> FileAnalysisResult {
         let category = determineCategoryFromFileType(fileType)
         
         return FileAnalysisResult(
@@ -151,26 +137,26 @@ class FoundationModelsManager: ObservableObject {
         )
     }
     
-    private func determineCategoryFromFileType(_ fileType: String) -> String {
+    func determineCategoryFromFileType(_ fileType: String) -> String {
         // Minimal fallback - don't do algorithmic categorization
         // The whole point is to use AI, not file extensions
         return "Uncategorized"
     }
-}
-
-enum FoundationModelsError: Error {
-    case sessionNotAvailable
-    case analysisTimeout
-    case invalidResponse
     
-    var localizedDescription: String {
-        switch self {
-        case .sessionNotAvailable:
-            return "Foundation Models session not available"
-        case .analysisTimeout:
-            return "Analysis timed out"
-        case .invalidResponse:
-            return "Invalid response from model"
+    enum FoundationModelsError: Error {
+        case sessionNotAvailable
+        case analysisTimeout
+        case invalidResponse
+        
+        var localizedDescription: String {
+            switch self {
+            case .sessionNotAvailable:
+                return "Foundation Models session not available"
+            case .analysisTimeout:
+                return "Analysis timed out"
+            case .invalidResponse:
+                return "Invalid response from model"
+            }
         }
     }
 }
