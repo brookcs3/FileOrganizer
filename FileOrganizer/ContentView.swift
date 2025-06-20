@@ -255,7 +255,7 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle("File Organizer")
-        .containerBackground(.ultraThinMaterial, for: .window)
+        .containerBackground(Material.ultraThinMaterial, for: ContainerBackgroundScope.window)
         .fileImporter(
             isPresented: $showingDirectoryPicker,
             allowedContentTypes: [.folder],
