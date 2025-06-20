@@ -12,6 +12,7 @@ import Foundation
 import FoundationModels
 import SwiftUI
 import Combine
+import Observation
 
 @Generable
 struct FileMetadata{
@@ -35,11 +36,12 @@ struct FileMetadata{
 
 @available(macOS 26.0, *)
 
+@Observable
 class FoundationModelsManager: ObservableObject {
-    @Published var isAvailable = false
-    @Published var availabilityStatus: String = "Checking..."
-    @Published var model: SystemLanguageModel?
-    @Published var session: LanguageModelSession?
+    var isAvailable = false
+    var availabilityStatus: String = "Checking..."
+    var model: SystemLanguageModel?
+    var session: LanguageModelSession?
 
     // Pool used when analyzing multiple files in parallel
     private var sessionPool: SessionPool<LanguageModelSession>?

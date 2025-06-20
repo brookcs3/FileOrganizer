@@ -14,13 +14,15 @@ import SwiftUI
 import Combine
 import FoundationModels          // ← add this line
 import OSLog
+import Observation
 
 @available(macOS 26.0, *)
 @MainActor
-class FileProcessor: ObservableObject {
-    @Published var isProcessing = false
-    @Published var progress: Double = 0.0
-    @Published var currentStatus = ""
+@Observable
+class FileProcessor {
+    var isProcessing = false
+    var progress: Double = 0.0
+    var currentStatus = ""
     
     var foundationModelsManager: FoundationModelsManager
     private let fileManager = FileManager.default
