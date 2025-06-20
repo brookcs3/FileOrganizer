@@ -146,29 +146,13 @@ struct AppSettings: @preconcurrency Codable {
 
 enum SortingMode: String, CaseIterable, Codable {
     case aiIntelligent = "AI Intelligent"
-    case byDate = "By Date"
-    case byType = "By Type"
-    
+
     var description: String {
-        switch self {
-        case .aiIntelligent:
-            return "Uses Apple Intelligence to analyze file content and create semantic categories for organizing"
-        case .byDate:
-            return "Organizes files by modification date in year/month structure"
-        case .byType:
-            return "Groups files by file type (Images, Documents, Videos, etc.)"
-        }
+        return "Uses Apple Intelligence to analyze file content and create semantic categories for organizing"
     }
-    
+
     var icon: String {
-        switch self {
-        case .aiIntelligent:
-            return "brain.head.profile"
-        case .byDate:
-            return "calendar"
-        case .byType:
-            return "doc.on.doc"
-        }
+        return "brain.head.profile"
     }
 }
 

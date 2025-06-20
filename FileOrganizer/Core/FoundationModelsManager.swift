@@ -137,24 +137,6 @@ class FoundationModelsManager: ObservableObject {
         )
     }
     
-    func createFallbackAnalysis(fileName: String, fileType: String) -> FileAnalysisResult {
-        let category = determineCategoryFromFileType(fileType)
-        
-        return FileAnalysisResult(
-            category: category,
-            subcategory: nil,
-            suggestedName: fileName,
-            description: "File type: \(fileType)",
-            tags: [fileType],
-            confidence: 0.3
-        )
-    }
-    
-    func determineCategoryFromFileType(_ fileType: String) -> String {
-        // Minimal fallback - don't do algorithmic categorization
-        // The whole point is to use AI, not file extensions
-        return "Uncategorized"
-    }
     
     enum FoundationModelsError: Error {
         case sessionNotAvailable

@@ -113,26 +113,6 @@ struct ContentView: View {
                     
                     Divider()
                     
-                    // Sorting Mode
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("Organization Mode", systemImage: "slider.horizontal.3")
-                            .font(.headline)
-                        
-                        Picker("Mode", selection: $appState.sortingMode) {
-                            ForEach(SortingMode.allCases, id: \.self) { mode in
-                                Text(mode.rawValue).tag(mode)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        
-                        Text(appState.sortingMode.description)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.horizontal)
-                    
-                    Divider()
-                    
                     // Dry Run Toggle
                     VStack(alignment: .leading, spacing: 8) {
                         Toggle("Dry Run Mode", isOn: $appState.isDryRun)
@@ -233,7 +213,7 @@ struct ContentView: View {
                             }
                             .accessibilityIdentifier("organizeButton")            // ← NEW
                             .buttonStyle(.borderedProminent)
-                            .disabled(appState.selectedDirectory == nil || fileProcessor.isProcessing)
+                            .disabled(appState.selectedDirectory == nil || fileProcessor.isProcessing || !foundationModelsManager.isAvailable)
                             .controlSize(.large)
                         }
                         .padding(32)
