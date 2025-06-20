@@ -19,18 +19,27 @@ struct FileOrganizerApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(appState)
-                .environmentObject(foundationModelsManager)
-                // ↓↓↓ add this line ↓↓↓
-            .environment(\.testFixtureFolder,
-                          ProcessInfo.processInfo.environment["FIXTURE_PATH"])
-            // ↑↑↑ add this line ↑↑↑
-                .onAppear {
-                    Task {
-                        await foundationModelsManager.initialize()
+            if foundationModelsManager.isAvailable {
+                ContentView()
+                    .environmentObject(appState)
+                    .environmentObject(foundationModelsManager)
+                    .environment(\.testFixtureFolder,
+                                ProcessInfo.processInfo.environment["FIXTURE_PATH"])
+                    .onAppear {
+                        Task {
+                            await foundationModelsManager.initialize()
+                        }
                     }
-                }
+            } else {
+                presentDemoScreen()
+                    .environmentObject(appState)
+                    .environmentObject(foundationModelsManager)
+                    .onAppear {
+                        Task {
+                            await foundationModelsManager.initialize()
+                        }
+                    }
+            }
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified)
@@ -41,6 +50,13 @@ struct FileOrganizerApp: App {
                 .environmentObject(appState)
                 .environmentObject(foundationModelsManager)
         }
+    }
+
+    private func presentDemoScreen() -> some View {
+        // NOTE: Tutorial screen will explain how to enable Apple Intelligence.
+        // For now this is a placeholder; app may sit idle on incompatible Macs.
+        Text("Apple Intelligence not available on this Mac.")
+            .padding()
     }
 }
 

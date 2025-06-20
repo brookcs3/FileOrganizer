@@ -117,7 +117,6 @@ struct FileOperation {
 // MARK: - Settings Models
 
 struct AppSettings: @preconcurrency Codable {
-    var defaultSortingMode: SortingMode = .aiIntelligent
     var enableDryRunByDefault = true
     var maxFilesPerBatch = 100
     var enableProgressNotifications = true
@@ -144,31 +143,12 @@ struct AppSettings: @preconcurrency Codable {
 
 // MARK: - Enums
 
-enum SortingMode: String, CaseIterable, Codable {
+enum SortingMode: String, Codable {
     case aiIntelligent = "AI Intelligent"
-    case byDate = "By Date"
-    case byType = "By Type"
-    
-    var description: String {
-        switch self {
-        case .aiIntelligent:
-            return "Uses Apple Intelligence to analyze file content and create semantic categories for organizing"
-        case .byDate:
-            return "Organizes files by modification date in year/month structure"
-        case .byType:
-            return "Groups files by file type (Images, Documents, Videos, etc.)"
-        }
-    }
-    
-    var icon: String {
-        switch self {
-        case .aiIntelligent:
-            return "brain.head.profile"
-        case .byDate:
-            return "calendar"
-        case .byType:
-            return "doc.on.doc"
-        }
-    }
+
+    /// Human-readable description for the sole sorting mode.
+    static let description = "Uses Apple Intelligence to analyze file content and create semantic categories for organizing"
+
+    var icon: String { "brain.head.profile" }
 }
 
