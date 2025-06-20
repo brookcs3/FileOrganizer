@@ -143,12 +143,9 @@ struct AppSettings: @preconcurrency Codable {
 
 // MARK: - Enums
 
-enum SortingMode: String, Codable {
-    case aiIntelligent = "AI Intelligent"
 
-    /// Human-readable description for the sole sorting mode.
+struct SortingMode {
+    static let name = "AI Intelligent"
     static let humanReadableDescription = "Uses Apple Intelligence to analyze file content and create semantic categories for organizing"
-
-    var icon: String { "brain.head.profile" }
-}
+    static let icon = "brain.head.profile"
 

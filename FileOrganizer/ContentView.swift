@@ -308,7 +308,6 @@ struct ContentView: View {
             do {
                 let result = try await fileProcessor.processDirectory(
                     directory,
-                    mode: appState.sortingMode,
                     isDryRun: appState.isDryRun
                 )
                 

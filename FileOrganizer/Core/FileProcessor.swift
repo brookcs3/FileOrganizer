@@ -31,7 +31,6 @@ class FileProcessor: ObservableObject {
     
     // MARK: - Main Processing Functions
     func processDirectory(_ directoryURL: URL,
-                          mode: SortingMode,
                           isDryRun: Bool = true) async throws -> OrganizationResult {
 
         // ── Security-scoped URL bookkeeping ───────────────────────────────
@@ -115,8 +114,7 @@ class FileProcessor: ObservableObject {
         progress      = 0.8
 
         let plan = createOrganizationPlan(files: processed,
-                                          sourceDirectory: directoryURL,
-                                          mode: mode)
+                                          sourceDirectory: directoryURL)
 
         currentStatus = "Executing organization..."
         progress      = 0.9
@@ -140,7 +138,7 @@ class FileProcessor: ObservableObject {
         return OrganizationResult(
             sourceDirectory   : directoryURL.path,
             targetDirectory   : plan.targetDirectory.path,
-            mode              : mode.rawValue,
+            mode              : SortingMode.name,
             filesProcessed    : total,
             filesOrganized    : execResult.filesOrganized,
             categoriesCreated : execResult.categoriesCreated,
@@ -245,7 +243,7 @@ class FileProcessor: ObservableObject {
 
     // MARK: - Organization Planning
     
-    private func createOrganizationPlan(files: [FileItem], sourceDirectory: URL, mode: SortingMode) -> OrganizationPlan {
+    private func createOrganizationPlan(files: [FileItem], sourceDirectory: URL) -> OrganizationPlan {
         // Organize files in place within the selected directory
         let targetDirectory = sourceDirectory
         var operations: [FileOperation] = []
