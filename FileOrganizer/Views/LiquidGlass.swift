@@ -9,9 +9,17 @@ extension View {
     func liquidGlassBackground(cornerRadius: CGFloat = 12) -> some View {
         self
             .padding()
-            .background(.ultraThinMaterial,
-                        in: RoundedRectangle(cornerRadius: cornerRadius,
-                                             style: .continuous))
-            .glassBackgroundEffect()
+            .background(
+                .ultraThinMaterial,
+                in: RoundedRectangle(
+                    cornerRadius: cornerRadius,
+                    style: .continuous
+                )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(Color.white.opacity(0.15))
+                    .blendMode(.overlay)
+            )
     }
 }
