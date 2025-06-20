@@ -1,0 +1,19 @@
+# Backup and test folders
+FileOrganizer-c6cb951aa38c5067164871cdd07b4a4a9e70e0bd/
+FileOrganizer-c6cb951aa38c5067164871cdd07b4a4a9e70e0bd.zip
+realistic_30_files Before/
+realistic_30_files after/
+Documentation/
+
+# macOS
+.DS_Store
+
+# Xcode
+*.xcworkspace/xcuserdata
+*.xcodeproj/xcuserdata
+UserInterfaceState.xcuserstate
+IDEFindNavigatorScopes.plist
+
+# Build artifacts
+build/
+DerivedData/

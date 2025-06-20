@@ -89,27 +89,18 @@ class FoundationModelsManager: ObservableObject {
         
     }
     
-    /// Resets the Foundation Models session pool, ensuring a fresh context for each file.
+    /// Resets the Foundation Models session, ensuring a fresh context for each file.
     func resetSession() {
         guard isAvailable else { return }
         let session = LanguageModelSession(instructions: instructionsText)
         self.session = session
-        self.sessionPool = SessionPool<LanguageModelSession>(maxParallel: 3) { @Sendable [instructionsText] in
-            LanguageModelSession(instructions: instructionsText)
-        }
     }
     
     func analyzeFileContent(_ content: String,
                             fileName: String,
                             fileType: String) async throws -> FileAnalysisResult {
         
-        guard let pool = sessionPool else { throw FoundationModelsError.sessionNotAvailable }
-        let session = try await pool.acquire()
-        defer {                                        // still synchronous
-            Task {                                     // hop to a new async context
-                await pool.release(session)            // ✅ complies with actor isolation
-            }
-        }
+        guard let session else { throw FoundationModelsError.sessionNotAvailable }
         
         let safeContent = String(content.prefix(3_000))
         let prompt = """

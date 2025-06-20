@@ -64,52 +64,39 @@ class FileProcessor {
         progress      = 0.1
 
         // ── 2. Analyse each file ────────────────────────────────────────
-        var processed = Array<FileItem?>(repeating: nil, count: fileItems.count)
+        var processedFiles: [FileItem] = []
         let total = fileItems.count
 
-        try await withThrowingTaskGroup(of: (Int, FileItem).self) { group in
-            for (idx, file) in fileItems.enumerated() {
-                group.addTask { [self] in
-                    await MainActor.run {
-                        self.currentStatus = "Analyzing \(file.name)..."
-                    }
+        for (idx, file) in fileItems.enumerated() {
+            currentStatus = "Analyzing \(file.name)..."
+            var updated = file
 
-                    var updated = file
-                    updated.analysisResult = try await analyzeFileWithAI(file)
+            foundationModelsManager.resetSession()
+            updated.analysisResult = try await analyzeFileWithAI(file)
 
-                    if let meta = updated.analysisResult {
-                        do {
-                            try await DirectorySummarySession.shared.add(
-                                FileMetadata(
-                                    primaryCategory : meta.category,
-                                    secondaryCategory: meta.subcategory,
-                                    suggestedFilename: meta.suggestedName,
-                                    summary         : meta.description,
-                                    tags            : meta.tags,
-                                    confidence      : meta.confidence
-                                )
-                            )
-                        } catch {
-                            print("Summary update failed for \(file.name): \(error)")
-                        }
-                    }
-
-                    return (idx, updated)
+            if let meta = updated.analysisResult {
+                do {
+                    try await DirectorySummarySession.shared.add(
+                        FileMetadata(
+                            primaryCategory : meta.category,
+                            secondaryCategory: meta.subcategory,
+                            suggestedFilename: meta.suggestedName,
+                            summary         : meta.description,
+                            tags            : meta.tags,
+                            confidence      : meta.confidence
+                        )
+                    )
+                } catch {
+                    print("Summary update failed for \(file.name): \(error)")
                 }
             }
 
-            var completed = 0
-            for try await (idx, item) in group {
-                processed[idx] = item
-                completed += 1
-                await MainActor.run {
-                    progress = 0.1 + 0.7 * Double(completed) / Double(total)
-                }
-                try await Task.sleep(nanoseconds: 10_000_000)
-            }
+            processedFiles.append(updated)
+            progress = 0.1 + 0.7 * Double(idx + 1) / Double(total)
+            
+            // Small delay to prevent overwhelming the system
+            try await Task.sleep(nanoseconds: 10_000_000)
         }
-
-        let processedFiles = processed.compactMap { $0 }
 
         // ── 3. Create & execute organization plan ───────────────────────
         currentStatus = "Creating organization plan..."
