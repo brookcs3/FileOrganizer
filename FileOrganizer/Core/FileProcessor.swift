@@ -74,12 +74,8 @@ class FileProcessor: ObservableObject {
                     }
 
                     var updated = file
-                    switch mode {
-                    case .aiIntelligent:
-                        updated.analysisResult = try await analyzeFileWithAI(file)
-                    case .byDate:
-                        updated.analysisResult = createDateBasedAnalysis(for: file)
-                    }
+                    updated.analysisResult = try await analyzeFileWithAI(file)
+
 
                     if let meta = updated.analysisResult {
                         do {
@@ -247,26 +243,7 @@ class FileProcessor: ObservableObject {
         return "Document: \(url.lastPathComponent)"
     }
     
-    // MARK: - Fallback Analysis Methods
-    
-    private func createDateBasedAnalysis(for fileItem: FileItem) -> FileAnalysisResult {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy"
-        let year = formatter.string(from: fileItem.modificationDate)
-        
-        formatter.dateFormat = "MM"
-        let month = formatter.string(from: fileItem.modificationDate)
-        
-        return FileAnalysisResult(
-            category: year,
-            subcategory: month,
-            suggestedName: fileItem.name,
-            description: "Organized by modification date",
-            tags: ["date-organized"],
-            confidence: 1.0
-        )
-    }
-    
+
     // MARK: - Organization Planning
     
     private func createOrganizationPlan(files: [FileItem], sourceDirectory: URL, mode: SortingMode) -> OrganizationPlan {
