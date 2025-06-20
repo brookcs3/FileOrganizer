@@ -21,6 +21,8 @@ struct SettingsView: View {
         NavigationView {
             Form {
                 Section("General") {
+                    Toggle("Enable Dry Run by Default", isOn: $settings.enableDryRunByDefault)
+                    
                     Stepper("Max Files per Batch: \(settings.maxFilesPerBatch)",
                            value: $settings.maxFilesPerBatch,
                            in: 10...1000,
@@ -138,6 +140,9 @@ struct SettingsView: View {
     private func saveSettings() {
         do {
             try metadataStore.saveSettings(settings)
+            
+            // Apply settings to app state
+            appState.isDryRun = settings.enableDryRunByDefault
             
         } catch {
             print("Failed to save settings: \(error)")

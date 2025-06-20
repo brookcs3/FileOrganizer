@@ -48,3 +48,14 @@ extension LanguageModelSession: LanguageModelSessionProtocol {
         return result.content
     }
 }
+
+// MARK: - Equality for SystemLanguageModel.UseCase
+
+extension SystemLanguageModel.UseCase: Equatable {
+    public static func == (lhs: SystemLanguageModel.UseCase, rhs: SystemLanguageModel.UseCase) -> Bool {
+        // If UseCase is an enum without associated values, synthesized; if not, update this accordingly.
+        return String(describing: lhs) == String(describing: rhs)
+    }
+}
+// Replace with a more precise implementation if UseCase has associated values.
+

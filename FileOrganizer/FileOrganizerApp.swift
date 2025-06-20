@@ -31,7 +31,6 @@ struct FileOrganizerApp: App {
                             await foundationModelsManager.initialize()
                         }
                     }
-                    .containerBackground(.ultraThinMaterial, for: .window)
             } else {
                 presentDemoScreen()
                     .environmentObject(appState)
@@ -41,12 +40,12 @@ struct FileOrganizerApp: App {
                             await foundationModelsManager.initialize()
                         }
                     }
-                    .containerBackground(.ultraThinMaterial, for: .window)
             }
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified)
-
+        .containerBackground(.ultraThinMaterial, for: .window)
+        
         Settings {
             SettingsView()
                 .environmentObject(appState)
@@ -72,6 +71,7 @@ class AppState: ObservableObject {
     var processingStatus = ""
     var lastOrganizationResult: OrganizationResult?
     var organizationHistory: [OrganizationResult] = []
+    var isDryRun = true
     
     func addToHistory(_ result: OrganizationResult) {
         organizationHistory.insert(result, at: 0)

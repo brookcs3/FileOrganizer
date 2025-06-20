@@ -112,6 +112,19 @@ struct ContentView: View {
                     .padding(.horizontal)
 
                     
+                    Divider()
+                    
+                    // Dry Run Toggle
+                    VStack(alignment: .leading, spacing: 8) {
+                        Toggle("Dry Run Mode", isOn: $appState.isDryRun)
+                            .font(.headline)
+                        
+                        Text("Preview changes without moving files")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal)
+                    
                     Spacer()
                     
                     // Navigation Buttons
@@ -242,7 +255,7 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle("File Organizer")
-        .containerBackground(Material.ultraThinMaterial, for: ContainerBackgroundScope.window)
+        .containerBackground(.ultraThinMaterial, for: .window)
         .fileImporter(
             isPresented: $showingDirectoryPicker,
             allowedContentTypes: [.folder],
@@ -298,7 +311,8 @@ struct ContentView: View {
         Task {
             do {
                 let result = try await fileProcessor.processDirectory(
-                    directory
+                    directory,
+                    isDryRun: appState.isDryRun
                 )
                 
                 appState.lastOrganizationResult = result

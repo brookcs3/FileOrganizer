@@ -76,8 +76,8 @@ struct HistoryRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.green)
+                Image(systemName: result.isDryRun ? "eye" : "checkmark.circle.fill")
+                    .foregroundColor(result.isDryRun ? .orange : .green)
                 Text(result.timestamp, style: .relative)
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -113,9 +113,19 @@ struct HistoryDetailView: View {
                 // Header
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
+                        Image(systemName: result.isDryRun ? "eye" : "checkmark.circle.fill")
+                            .foregroundColor(result.isDryRun ? .orange : .green)
                         Spacer()
+                        if result.isDryRun {
+                            Text("DRY RUN")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.orange.opacity(0.2))
+                                .foregroundColor(.orange)
+                                .cornerRadius(4)
+                        }
                     }
                     
                     Text(result.timestamp.formatted())

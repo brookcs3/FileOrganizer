@@ -7,10 +7,9 @@
 //  Data models for file analysis and organization
 //
 
-import AppIntents
 import Foundation
 
-struct FileAnalysisResult: @preconcurrency Codable, Identifiable, Sendable {
+struct FileAnalysisResult: @preconcurrency Codable, Identifiable {
     let id: UUID
     let category: String
     let subcategory: String?
@@ -18,16 +17,9 @@ struct FileAnalysisResult: @preconcurrency Codable, Identifiable, Sendable {
     let description: String
     let tags: [String]
     let confidence: Double
-
+    
     // ADD this initializer:
-    init(
-        category: String,
-        subcategory: String?,
-        suggestedName: String,
-        description: String,
-        tags: [String],
-        confidence: Double
-    ) {
+    init(category: String, subcategory: String?, suggestedName: String, description: String, tags: [String], confidence: Double) {
         self.id = UUID()
         self.category = category
         self.subcategory = subcategory
@@ -36,7 +28,7 @@ struct FileAnalysisResult: @preconcurrency Codable, Identifiable, Sendable {
         self.tags = tags
         self.confidence = confidence
     }
-
+    
     var displayCategory: String {
         if let subcategory = subcategory {
             return "\(category)/\(subcategory)"
@@ -45,44 +37,9 @@ struct FileAnalysisResult: @preconcurrency Codable, Identifiable, Sendable {
     }
 }
 
-/// Represents the result of a file organization operation.
-///
-/// This structure contains metadata and statistics about a completed
-/// organization process, including directory paths, counts of processed
-/// files, organization mode, and the duration of the operation.
-///
-/// - Note: Available on macOS 26.0 and later.
-///
-/// Properties:
-///   - id: A unique identifier for this result.
-///   - timestamp: The date and time when the organization completed.
-///   - sourceDirectory: The original directory containing the files.
-///   - targetDirectory: The directory where organized files were placed.
-///   - mode: The strategy or mode used for organization.
-///   - filesProcessed: The total number of files that were considered.
-///   - filesOrganized: The number of files that were actually organized.
-///   - categoriesCreated: The list of categories created during organization.
-///   - duration: The total time taken for the operation, in seconds.
-///
-/// Example usage:
-/// ```swift
-/// let result = OrganizationResult(
-///     sourceDirectory: "/Users/example/source",
-///     targetDirectory: "/Users/example/organized",
-///     mode: "Create Subfolders",
-///     filesProcessed: 120,
-///     filesOrganized: 115,
-///     categoriesCreated: ["Work", "Personal", "Receipts"],
-///     duration: 4.23
-/// )
-/// print(result.summary)
-/// ```
-@available(macOS 26.0, *)
-public struct OrganizationResult: Identifiable, @preconcurrency Codable,
-    Hashable
-{
 
-    public let id: UUID
+struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable {
+    let id: UUID
     let timestamp: Date
     let sourceDirectory: String
     let targetDirectory: String
@@ -90,33 +47,29 @@ public struct OrganizationResult: Identifiable, @preconcurrency Codable,
     let filesProcessed: Int
     let filesOrganized: Int
     let categoriesCreated: [String]
+    let isDryRun: Bool
     let duration: TimeInterval
-
-    init(
-        sourceDirectory: String,
-        targetDirectory: String,
-        mode: String,
-        filesProcessed: Int,
-        filesOrganized: Int,
-        categoriesCreated: [String],
-        duration: TimeInterval
-    ) {
+    
+    
+    init(sourceDirectory: String, targetDirectory: String, mode: String, filesProcessed: Int, filesOrganized: Int, categoriesCreated: [String], isDryRun: Bool, duration: TimeInterval) {
         self.id = UUID()
         self.timestamp = Date()
         self.sourceDirectory = sourceDirectory
         self.targetDirectory = targetDirectory
-        self.mode = mode
+        self.mode = mode  // Fix: assign mode
         self.filesProcessed = filesProcessed
         self.filesOrganized = filesOrganized
         self.categoriesCreated = categoriesCreated  // Fix: assign categoriesCreated
+        self.isDryRun = isDryRun
         self.duration = duration
     }
-
+    
     var summary: String {
-        return
-            "Organized \(filesOrganized)/\(filesProcessed) files into \(categoriesCreated.count) categories"
+        let action = isDryRun ? "Would organize" : "Organized"
+        return "\(action) \(filesOrganized)/\(filesProcessed) files into \(categoriesCreated.count) categories"
     }
 }
+
 
 struct FileItem: Identifiable {
     let id = UUID()
@@ -126,11 +79,11 @@ struct FileItem: Identifiable {
     let size: Int64
     let modificationDate: Date
     var analysisResult: FileAnalysisResult?
-
+    
     var displaySize: String {
         ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
     }
-
+    
     var fileExtension: String {
         url.pathExtension.lowercased()
     }
@@ -140,11 +93,11 @@ struct OrganizationPlan {
     let sourceDirectory: URL
     let targetDirectory: URL
     let operations: [FileOperation]
-
+    let isDryRun: Bool
+    
     var summary: String {
         let categories = Set(operations.map { $0.targetCategory }).count
-        return
-            "Plan: Move \(operations.count) files into \(categories) categories"
+        return "Plan: Move \(operations.count) files into \(categories) categories"
     }
 }
 
@@ -153,7 +106,7 @@ struct FileOperation {
     let targetURL: URL
     let targetCategory: String
     let operation: OperationType
-
+    
     enum OperationType {
         case move
         case copy
@@ -164,32 +117,37 @@ struct FileOperation {
 // MARK: - Settings Models
 
 struct AppSettings: @preconcurrency Codable {
+    var enableDryRunByDefault = true
     var maxFilesPerBatch = 100
     var enableProgressNotifications = true
     var organizationStrategy: OrganizationStrategy = .createSubfolders
-
+    
     enum OrganizationStrategy: String, CaseIterable, Codable {
         case createSubfolders = "Create Subfolders"
         case flatStructure = "Flat Structure"
-
+        case dateHierarchy = "Date Hierarchy"
+        
         var description: String {
             switch self {
             case .createSubfolders:
                 return "Create category subfolders"
             case .flatStructure:
                 return "Keep files in same directory with renamed files"
+            case .dateHierarchy:
+                return "Organize by year/month/day structure"
             }
         }
     }
 }
 
+
 // MARK: - Enums
 
 struct SortingMode {
     static let name = "AI Intelligent"
-    static let humanReadableDescription =
-        "Uses Apple Intelligence to analyze file content and create semantic categories for organizing"
+    static let humanReadableDescription = "Uses Apple Intelligence to analyze file content and create semantic categories for organizing"
     static let icon = "brain.head.profile"
 
     private init() {}
 }
+

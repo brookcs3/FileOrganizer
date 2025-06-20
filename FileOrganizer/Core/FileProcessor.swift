@@ -32,7 +32,8 @@ class FileProcessor {
     }
     
     // MARK: - Main Processing Functions
-    func processDirectory(_ directoryURL: URL) async throws -> OrganizationResult {
+    func processDirectory(_ directoryURL: URL,
+                          isDryRun: Bool = true) async throws -> OrganizationResult {
 
         // ── Security-scoped URL bookkeeping ───────────────────────────────
         guard let bookmarkData = UserDefaults.standard.data(forKey: "selectedFolderBookmark") else {
@@ -66,9 +67,9 @@ class FileProcessor {
         var processed = Array<FileItem?>(repeating: nil, count: fileItems.count)
         let total = fileItems.count
 
-        try await withThrowingTaskGroup(of: (Int, FileItem).self) { group in
+        await withTaskGroup(of: (Int, FileItem).self) { group in
             for (idx, file) in fileItems.enumerated() {
-                group.addTask { [self] () async throws -> (Int, FileItem) in
+                group.addTask { [mode, self] in
                     await MainActor.run {
                         self.currentStatus = "Analyzing \(file.name)..."
                     }
@@ -98,7 +99,7 @@ class FileProcessor {
             }
 
             var completed = 0
-            for try await (idx, item) in group {
+            for await (idx, item) in group {
                 processed[idx] = item
                 completed += 1
                 await MainActor.run {
@@ -108,19 +109,19 @@ class FileProcessor {
             }
         }
 
-        let processedFiles = processed.compactMap { $0 }
+        let processed = processed.compactMap { $0 }
 
         // ── 3. Create & execute organization plan ───────────────────────
         currentStatus = "Creating organization plan..."
         progress      = 0.8
 
-        let plan = createOrganizationPlan(files: processedFiles,
+        let plan = createOrganizationPlan(files: processed,
                                           sourceDirectory: directoryURL)
 
         currentStatus = "Executing organization..."
         progress      = 0.9
 
-        let execResult = try await executeOrganization(plan: plan)
+        let execResult = try await executeOrganization(plan: plan, isDryRun: isDryRun)
 
         progress      = 1
         currentStatus = "Complete"
@@ -143,6 +144,7 @@ class FileProcessor {
             filesProcessed    : total,
             filesOrganized    : execResult.filesOrganized,
             categoriesCreated : execResult.categoriesCreated,
+            isDryRun          : isDryRun,
             duration          : Date().timeIntervalSince(startTime)
         )
     }
@@ -281,7 +283,8 @@ class FileProcessor {
         return OrganizationPlan(
             sourceDirectory: sourceDirectory,
             targetDirectory: targetDirectory,
-            operations: operations
+            operations: operations,
+            isDryRun: true
         )
     }
 
@@ -303,25 +306,33 @@ class FileProcessor {
     
     // MARK: - Organization Execution
     
-    private func executeOrganization(plan: OrganizationPlan) async throws -> (filesOrganized: Int, categoriesCreated: [String]) {
+    private func executeOrganization(plan: OrganizationPlan, isDryRun: Bool) async throws -> (filesOrganized: Int, categoriesCreated: [String]) {
         var filesOrganized: Int? = nil
         var categoriesCreated: Set<String> = []
-
-        // Create target directory
-        try fileManager.createDirectory(at: plan.targetDirectory, withIntermediateDirectories: true)
+        
+        if !isDryRun {
+            // Create target directory
+            try fileManager.createDirectory(at: plan.targetDirectory, withIntermediateDirectories: true)
+        }
         
         for operation in plan.operations {
             switch operation.operation {
             case .createDirectory:
-                try fileManager.createDirectory(at: operation.targetURL, withIntermediateDirectories: true)
+                if !isDryRun {
+                    try fileManager.createDirectory(at: operation.targetURL, withIntermediateDirectories: true)
+                }
                 categoriesCreated.insert(operation.targetCategory)
-
+                
             case .move:
-                try fileManager.moveItem(at: operation.sourceURL, to: operation.targetURL)
+                if !isDryRun {
+                    try fileManager.moveItem(at: operation.sourceURL, to: operation.targetURL)
+                }
                 filesOrganized = (filesOrganized ?? 0) + 1
-
+                
             case .copy:
-                try fileManager.copyItem(at: operation.sourceURL, to: operation.targetURL)
+                if !isDryRun {
+                    try fileManager.copyItem(at: operation.sourceURL, to: operation.targetURL)
+                }
                 filesOrganized = (filesOrganized ?? 0) + 1
             }
         }
