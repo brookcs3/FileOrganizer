@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import AppIntents
 
 struct FileAnalysisResult: @preconcurrency Codable, Identifiable {
     let id: UUID
@@ -38,7 +39,7 @@ struct FileAnalysisResult: @preconcurrency Codable, Identifiable {
 }
 
 
-struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable {
+struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable, IntentValue {
     let id: UUID
     let timestamp: Date
     let sourceDirectory: String
@@ -67,6 +68,18 @@ struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable {
     var summary: String {
         let action = isDryRun ? "Would organize" : "Organized"
         return "\(action) \(filesOrganized)/\(filesProcessed) files into \(categoriesCreated.count) categories"
+    }
+    
+    // MARK: - IntentValue conformance
+    
+    func encode(into encoder: inout DataEncoder) throws {
+        let data = try JSONEncoder().encode(self)
+        try encoder.encode(data)
+    }
+    
+    init(from decoder: inout DataDecoder) throws {
+        let data = try decoder.decode(Data.self)
+        self = try JSONDecoder().decode(OrganizationResult.self, from: data)
     }
 }
 
@@ -150,4 +163,3 @@ struct SortingMode {
 
     private init() {}
 }
-

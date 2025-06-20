@@ -3,7 +3,8 @@ import AppIntents
 import SwiftUI
 
 @available(macOS 26.0, *)
-struct OrganizeFilesIntent: AppIntent {
+@MainActor
+struct OrganizeFilesIntent: @MainActor AppIntent {
     static var title: LocalizedStringResource = "Organize Files"
     static var description = IntentDescription("Organize files in a directory using Apple Intelligence")
 
@@ -25,13 +26,15 @@ struct OrganizeFilesIntent: AppIntent {
 }
 
 @available(macOS 26.0, *)
-struct OrganizationSnippetIntent: SnippetIntent {
+@MainActor
+struct OrganizationSnippetIntent: @MainActor SnippetIntent {
     static var title: LocalizedStringResource = "Organization Results"
 
-    @Parameter var result: OrganizationResult
+    @Parameter
+    var result: OrganizationResult
 
     func perform() async throws -> some IntentResult & ShowsSnippetView {
-        return .result(view: OrganizationResultSnippetView(result: result))
+        .result(view: OrganizationResultSnippetView(result: result))
     }
 }
 
@@ -82,10 +85,11 @@ struct OrganizationResultSnippetView: View {
 }
 
 @available(macOS 26.0, *)
-struct ViewInAppIntent: AppIntent {
+@MainActor
+struct ViewInAppIntent: @MainActor AppIntent {
     static var title: LocalizedStringResource = "Open App"
 
     func perform() async throws -> some IntentResult {
-        return .result()
+        .result()
     }
 }
