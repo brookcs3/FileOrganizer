@@ -28,8 +28,15 @@ actor DirectorySummarySession {
     func globalAdvice() async throws -> String {
         let response = try await session.respond(
             to: """
-                Summarise the directory and suggest canonical folder names \
-                if any are inconsistent.
+                Review the folder names created and suggest simplifications for any that are verbose or redundant. \
+                Format suggestions as: `Current_Verbose_Name` -> **Simplified_Name**
+                
+                For example:
+                - `JavaScript_Files` -> **JavaScript**
+                - `Audio_Files` -> **Audio**
+                - `Document_PDFs` -> **Documents**
+                
+                Only suggest changes for folders that have unnecessarily verbose names.
                 """,
             options: .init(temperature: 0.2)
         )
