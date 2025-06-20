@@ -31,6 +31,7 @@ struct FileOrganizerApp: App {
                             await foundationModelsManager.initialize()
                         }
                     }
+                    .containerBackground(.ultraThinMaterial, for: .window)
             } else {
                 presentDemoScreen()
                     .environmentObject(appState)
@@ -40,11 +41,11 @@ struct FileOrganizerApp: App {
                             await foundationModelsManager.initialize()
                         }
                     }
+                    .containerBackground(.ultraThinMaterial, for: .window)
             }
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified)
-        .containerBackground(Material.ultraThinMaterial, for: ContainerBackgroundScope.window)
 
         Settings {
             SettingsView()
