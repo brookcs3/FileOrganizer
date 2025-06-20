@@ -242,6 +242,7 @@ class FileProcessor: ObservableObject {
         return "Document: \(url.lastPathComponent)"
     }
     
+
     // MARK: - Organization Planning
     
     private func createOrganizationPlan(files: [FileItem], sourceDirectory: URL, mode: SortingMode) -> OrganizationPlan {
