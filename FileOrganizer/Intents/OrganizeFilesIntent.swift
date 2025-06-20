@@ -17,7 +17,7 @@ struct OrganizeFilesIntent: AppIntent {
         let manager  = FoundationModelsManager()
         await manager.initialize()
         let processor = FileProcessor(foundationModelsManager: manager)
-        let result = try await processor.processDirectory(directory, isDryRun: true)
+        let result = try await processor.processDirectory(directory)
         await MainActor.run {
             appState.addToHistory(result)
         }
