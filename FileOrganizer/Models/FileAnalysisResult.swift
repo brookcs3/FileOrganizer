@@ -140,7 +140,6 @@ struct AppSettings: @preconcurrency Codable {
     enum OrganizationStrategy: String, CaseIterable, Codable {
         case createSubfolders = "Create Subfolders"
         case flatStructure = "Flat Structure"
-        case dateHierarchy = "Date Hierarchy"
         
         var description: String {
             switch self {
@@ -148,8 +147,6 @@ struct AppSettings: @preconcurrency Codable {
                 return "Create category subfolders"
             case .flatStructure:
                 return "Keep files in same directory with renamed files"
-            case .dateHierarchy:
-                return "Organize by year/month/day structure"
             }
         }
     }
