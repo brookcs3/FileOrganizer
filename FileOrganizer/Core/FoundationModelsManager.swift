@@ -105,7 +105,7 @@ class FoundationModelsManager: ObservableObject {
         
         guard let pool = sessionPool else { throw FoundationModelsError.sessionNotAvailable }
         let session = try await pool.acquire()
-        defer { pool.release(session) }
+        defer { await pool.release(session) }
         
         let safeContent = String(content.prefix(3_000))
         let prompt = """
@@ -120,7 +120,7 @@ class FoundationModelsManager: ObservableObject {
         
         let opts = GenerationOptions(temperature: temperature)
         
-        let response = try await (session as! LanguageModelSession).respond(
+        let response = try await session.respond(
             to: prompt,
             generating: FileMetadata.self,
             includeSchemaInPrompt: false,
