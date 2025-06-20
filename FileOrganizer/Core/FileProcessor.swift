@@ -67,7 +67,7 @@ class FileProcessor {
         var processed = Array<FileItem?>(repeating: nil, count: fileItems.count)
         let total = fileItems.count
 
-        await withThrowingTaskGroup(of: (Int, FileItem).self) { group in
+        try await withThrowingTaskGroup(of: (Int, FileItem).self) { group in
             for (idx, file) in fileItems.enumerated() {
                 group.addTask { [self] in
                     await MainActor.run {
@@ -99,7 +99,7 @@ class FileProcessor {
             }
 
             var completed = 0
-            for await (idx, item) in group {
+            for try await (idx, item) in group {
                 processed[idx] = item
                 completed += 1
                 await MainActor.run {
