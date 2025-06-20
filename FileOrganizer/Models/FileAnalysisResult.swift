@@ -58,7 +58,7 @@ public struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashabl
         self.timestamp = Date()
         self.sourceDirectory = sourceDirectory
         self.targetDirectory = targetDirectory
-        self.mode = mode  // Fix: assign mode
+        self.mode = mode
         self.filesProcessed = filesProcessed
         self.filesOrganized = filesOrganized
         self.categoriesCreated = categoriesCreated  // Fix: assign categoriesCreated
@@ -67,18 +67,6 @@ public struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashabl
 
     var summary: String {
         return "Organized \(filesOrganized)/\(filesProcessed) files into \(categoriesCreated.count) categories"
-    }
-    
-    // MARK: - IntentValue conformance
-    
-    func encode(into encoder: inout IntentEncoder) throws {
-        let data = try JSONEncoder().encode(self)
-        try encoder.encode(data)
-    }
-
-    init(from decoder: inout IntentDecoder) throws {
-        let data = try decoder.decode(Data.self)
-        self = try JSONDecoder().decode(OrganizationResult.self, from: data)
     }
 }
 
