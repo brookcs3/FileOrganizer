@@ -17,9 +17,9 @@ actor DirectorySummarySession {
     )
 
     /// Append one bullet point for a newly-analysed file.
-    func add(_ meta: FileMetadata, actualFolderName: String) async throws {
+    func add(_ meta: FileMetadata) async throws {
         _ = try await session.respond(
-            to: "\(actualFolderName) | \(meta.suggestedFilename) | \(meta.confidence)",
+            to: "\(meta.primaryCategory) | \(meta.suggestedFilename) | \(meta.confidence)",
             options: .init(temperature: 0)     // just store it
         )
     }

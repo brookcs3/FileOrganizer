@@ -94,7 +94,7 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
                     
-                    Text("Built with Apple Foundation Models and inspired by QiuYannnn's Local-File-Organizer methodology.")
+                    Text("Built with Apple Foundation Models and programmed by Cameron Brooks.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

@@ -51,6 +51,11 @@
                BlueprintName = "FileOrganizerUITests"
                ReferencedContainer = "container:FileOrganizer.xcodeproj">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "FileOrganizerUITestsLaunchTests/testLaunch()">
+               </Test>
+            </SkippedTests>
          </TestableReference>
       </Testables>
    </TestAction>

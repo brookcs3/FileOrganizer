@@ -4,7 +4,7 @@
 //
 //  Created by Cameron Brooks on 6/18/25.
 //  Main application entry point using Apple Foundation Models
-//  Based on QiuYannnn methodology with Apple's on-device LLM
+//  
 //
 
 import SwiftUI

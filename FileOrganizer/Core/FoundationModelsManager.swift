@@ -5,7 +5,7 @@
 //  Created by Cameron Brooks on 6/18/25.
 //
 //  Manages Apple Foundation Models integration
-//  Implements QiuYannnn token-safe methodology
+//  Implements  token-safe methodology
 //
 
 import Foundation

@@ -4,7 +4,7 @@
 //
 //  Created by Cameron Brooks on 6/18/25.
 //
-//  Core file processing engine implementing QiuYannnn methodology
+//  Core file processing engine implementing token-safe methodology
 //  with Apple Foundation Models for token-safe analysis
 //
 
@@ -15,6 +15,7 @@ import Combine
 import FoundationModels          // ← add this line
 import OSLog
 import Observation
+import Playgrounds
 
 @available(macOS 26.0, *)
 @MainActor
@@ -83,8 +84,7 @@ class FileProcessor {
                             summary         : meta.description,
                             tags            : meta.tags,
                             confidence      : meta.confidence
-                        ),
-                        actualFolderName: meta.displayCategory
+                        )
                     )
                 } catch {
                     print("Summary update failed for \(file.name): \(error)")

@@ -9,7 +9,6 @@
 import Foundation
 import SwiftUI
 import Combine
-import CryptoKit
 
 @available(macOS 26.0, *)
 @MainActor
@@ -41,13 +40,8 @@ class MetadataStore: ObservableObject {
     
     // MARK: - Analysis Results Storage
     
-    private func stableHash(_ input: String) -> String {
-        let digest = SHA256.hash(data: Data(input.utf8))
-        return digest.map { String(format: "%02x", $0) }.joined()
-    }
-
     func saveAnalysisResults(_ results: [String: FileAnalysisResult], for directoryPath: String) throws {
-        let directoryHash = stableHash(directoryPath)
+        let directoryHash = directoryPath.hash
         let metadataFile = metadataDirectory.appendingPathComponent("analysis_\(directoryHash).json")
         
         let data = try encoder.encode(results)
@@ -55,7 +49,7 @@ class MetadataStore: ObservableObject {
     }
     
     func loadAnalysisResults(for directoryPath: String) throws -> [String: FileAnalysisResult]? {
-        let directoryHash = stableHash(directoryPath)
+        let directoryHash = directoryPath.hash
         let metadataFile = metadataDirectory.appendingPathComponent("analysis_\(directoryHash).json")
         
         guard fileManager.fileExists(atPath: metadataFile.path) else {
