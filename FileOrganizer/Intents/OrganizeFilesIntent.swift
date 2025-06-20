@@ -16,7 +16,9 @@ struct OrganizeFilesIntent: AppIntent {
         await manager.initialize()
         let processor = FileProcessor(foundationModelsManager: manager)
         let result = try await processor.processDirectory(directory, isDryRun: true)
-        appState.addToHistory(result)
+        await MainActor.run {
+            appState.addToHistory(result)
+        }
         return .result(
             value: result,
             snippetIntent: OrganizationSnippetIntent(result: result)
