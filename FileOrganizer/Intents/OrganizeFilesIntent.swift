@@ -29,6 +29,10 @@ struct OrganizeFilesIntent: AppIntent {
 
 @available(macOS 26.0, *)
 struct OrganizationSnippetIntent: SnippetIntent {
+    init() {
+        <#code#>
+    }
+    
     static var title: LocalizedStringResource = "Organization Results"
 
     @Parameter
