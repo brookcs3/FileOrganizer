@@ -233,7 +233,7 @@ struct ContentView: View {
                             }
                             .accessibilityIdentifier("organizeButton")            // ← NEW
                             .buttonStyle(.borderedProminent)
-                            .disabled(appState.selectedDirectory == nil || fileProcessor.isProcessing)
+                            .disabled(appState.selectedDirectory == nil || fileProcessor.isProcessing || !foundationModelsManager.isAvailable)
                             .controlSize(.large)
                         }
                         .padding(32)

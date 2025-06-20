@@ -76,20 +76,9 @@ class FileProcessor: ObservableObject {
                     var updated = file
                     switch mode {
                     case .aiIntelligent:
-                        if foundationModelsManager.isAvailable {
-                            do {
-                                updated.analysisResult = try await analyzeFileWithAI(file)
-                            } catch {
-                                print("AI analysis failed for \(file.name): \(error)")
-                                updated.analysisResult = createFallbackAnalysis(for: file)
-                            }
-                        } else {
-                            updated.analysisResult = createFallbackAnalysis(for: file)
-                        }
+                        updated.analysisResult = try await analyzeFileWithAI(file)
                     case .byDate:
                         updated.analysisResult = createDateBasedAnalysis(for: file)
-                    case .byType:
-                        updated.analysisResult = createTypeBasedAnalysis(for: file)
                     }
 
                     if let meta = updated.analysisResult {
@@ -260,19 +249,6 @@ class FileProcessor: ObservableObject {
     
     // MARK: - Fallback Analysis Methods
     
-    private func createFallbackAnalysis(for fileItem: FileItem) -> FileAnalysisResult {
-        let category = determineCategoryFromExtension(fileItem.fileExtension)
-        
-        return FileAnalysisResult(
-            category: category,
-            subcategory: nil,
-            suggestedName: fileItem.name,
-            description: "Organized by file type",
-            tags: [fileItem.fileExtension],
-            confidence: 0.7
-        )
-    }
-    
     private func createDateBasedAnalysis(for fileItem: FileItem) -> FileAnalysisResult {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy"
@@ -289,44 +265,6 @@ class FileProcessor: ObservableObject {
             tags: ["date-organized"],
             confidence: 1.0
         )
-    }
-    
-    private func createTypeBasedAnalysis(for fileItem: FileItem) -> FileAnalysisResult {
-        let category = determineCategoryFromExtension(fileItem.fileExtension)
-        
-        return FileAnalysisResult(
-            category: category,
-            subcategory: fileItem.fileExtension.uppercased(),
-            suggestedName: fileItem.name,
-            description: "Organized by file type",
-            tags: [fileItem.fileExtension],
-            confidence: 1.0
-        )
-    }
-    
-    private func determineCategoryFromExtension(_ extension: String) -> String {
-        let ext = `extension`.lowercased()
-        
-        switch ext {
-        case "jpg", "jpeg", "png", "gif", "bmp", "tiff", "heic", "webp":
-            return "Images"
-        case "pdf", "doc", "docx", "txt", "rtf", "md", "pages":
-            return "Documents"
-        case "xls", "xlsx", "csv", "numbers":
-            return "Spreadsheets"
-        case "ppt", "pptx", "key":
-            return "Presentations"
-        case "mp3", "wav", "aac", "m4a", "flac", "ogg":
-            return "Audio"
-        case "mp4", "mov", "avi", "mkv", "wmv", "m4v":
-            return "Videos"
-        case "zip", "rar", "7z", "tar", "gz":
-            return "Archives"
-        case "app", "dmg", "pkg":
-            return "Applications"
-        default:
-            return "Other"
-        }
     }
     
     // MARK: - Organization Planning
