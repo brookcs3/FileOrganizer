@@ -10,6 +10,7 @@ struct OrganizeFilesIntent: AppIntent {
     @Parameter(title: "Directory")
     var directory: URL
 
+    @MainActor
     func perform() async throws -> some ReturnsValue<OrganizationResult> & ShowsSnippetIntent {
         let appState = AppState()
         let manager  = FoundationModelsManager()
