@@ -83,7 +83,8 @@ class FileProcessor {
                             summary         : meta.description,
                             tags            : meta.tags,
                             confidence      : meta.confidence
-                        )
+                        ),
+                        actualFolderName: meta.displayCategory
                     )
                 } catch {
                     print("Summary update failed for \(file.name): \(error)")

@@ -17,9 +17,9 @@ actor DirectorySummarySession {
     )
 
     /// Append one bullet point for a newly-analysed file.
-    func add(_ meta: FileMetadata) async throws {
+    func add(_ meta: FileMetadata, actualFolderName: String) async throws {
         _ = try await session.respond(
-            to: "\(meta.primaryCategory) | \(meta.suggestedFilename) | \(meta.confidence)",
+            to: "\(actualFolderName) | \(meta.suggestedFilename) | \(meta.confidence)",
             options: .init(temperature: 0)     // just store it
         )
     }
@@ -28,15 +28,8 @@ actor DirectorySummarySession {
     func globalAdvice() async throws -> String {
         let response = try await session.respond(
             to: """
-                Review the folder names created and suggest simplifications for any that are verbose or redundant. \
-                Format suggestions as: `Current_Verbose_Name` -> **Simplified_Name**
-                
-                For example:
-                - `JavaScript_Files` -> **JavaScript**
-                - `Audio_Files` -> **Audio**
-                - `Document_PDFs` -> **Documents**
-                
-                Only suggest changes for folders that have unnecessarily verbose names.
+                Summarise the directory and suggest canonical folder names \
+                if any are inconsistent.
                 """,
             options: .init(temperature: 0.2)
         )
