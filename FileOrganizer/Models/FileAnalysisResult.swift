@@ -147,12 +147,15 @@ struct AppSettings: @preconcurrency Codable {
 enum SortingMode: String, CaseIterable, Codable {
     case aiIntelligent = "AI Intelligent"
 
+
     var description: String {
         return "Uses Apple Intelligence to analyze file content and create semantic categories for organizing"
+
     }
 
     var icon: String {
         return "brain.head.profile"
+
     }
 }
 

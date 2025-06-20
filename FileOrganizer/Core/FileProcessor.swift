@@ -76,6 +76,7 @@ class FileProcessor: ObservableObject {
                     var updated = file
                     updated.analysisResult = try await analyzeFileWithAI(file)
 
+
                     if let meta = updated.analysisResult {
                         do {
                             try await DirectorySummarySession.shared.add(
@@ -242,6 +243,7 @@ class FileProcessor: ObservableObject {
         return "Document: \(url.lastPathComponent)"
     }
     
+
     // MARK: - Organization Planning
     
     private func createOrganizationPlan(files: [FileItem], sourceDirectory: URL, mode: SortingMode) -> OrganizationPlan {
