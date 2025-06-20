@@ -67,9 +67,9 @@ class FileProcessor {
         var processed = Array<FileItem?>(repeating: nil, count: fileItems.count)
         let total = fileItems.count
 
-        await withTaskGroup(of: (Int, FileItem).self) { group in
+        await withThrowingTaskGroup(of: (Int, FileItem).self) { group in
             for (idx, file) in fileItems.enumerated() {
-                group.addTask { [mode, self] in
+                group.addTask { [self] in
                     await MainActor.run {
                         self.currentStatus = "Analyzing \(file.name)..."
                     }
@@ -109,13 +109,13 @@ class FileProcessor {
             }
         }
 
-        let processed = processed.compactMap { $0 }
+        let processedFiles = processed.compactMap { $0 }
 
         // ── 3. Create & execute organization plan ───────────────────────
         currentStatus = "Creating organization plan..."
         progress      = 0.8
 
-        let plan = createOrganizationPlan(files: processed,
+        let plan = createOrganizationPlan(files: processedFiles,
                                           sourceDirectory: directoryURL)
 
         currentStatus = "Executing organization..."

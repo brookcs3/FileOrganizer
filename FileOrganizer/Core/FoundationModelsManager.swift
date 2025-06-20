@@ -65,7 +65,7 @@ class FoundationModelsManager: ObservableObject {
             let session = LanguageModelSession(instructions: instructionsText)
             self.session = session
 
-            self.sessionPool = SessionPool<LanguageModelSession>(maxParallel: 3) { [instructionsText] in
+            self.sessionPool = SessionPool<LanguageModelSession>(maxParallel: 3) { @Sendable [instructionsText] in
 
                 LanguageModelSession(instructions: instructionsText)
             }
@@ -94,7 +94,7 @@ class FoundationModelsManager: ObservableObject {
         guard isAvailable else { return }
         let session = LanguageModelSession(instructions: instructionsText)
         self.session = session
-        self.sessionPool = SessionPool<LanguageModelSession>(maxParallel: 3) { [instructionsText] in
+        self.sessionPool = SessionPool<LanguageModelSession>(maxParallel: 3) { @Sendable [instructionsText] in
             LanguageModelSession(instructions: instructionsText)
         }
     }
@@ -105,7 +105,11 @@ class FoundationModelsManager: ObservableObject {
         
         guard let pool = sessionPool else { throw FoundationModelsError.sessionNotAvailable }
         let session = try await pool.acquire()
-        defer { pool.release(session) }
+        defer {                                        // still synchronous
+            Task {                                     // hop to a new async context
+                await pool.release(session)            // ✅ complies with actor isolation
+            }
+        }
         
         let safeContent = String(content.prefix(3_000))
         let prompt = """
@@ -120,7 +124,7 @@ class FoundationModelsManager: ObservableObject {
         
         let opts = GenerationOptions(temperature: temperature)
         
-        let response = try await (session as! LanguageModelSession).respond(
+        let response = try await session.respond(
             to: prompt,
             generating: FileMetadata.self,
             includeSchemaInPrompt: false,

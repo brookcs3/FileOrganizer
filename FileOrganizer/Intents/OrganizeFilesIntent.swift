@@ -3,37 +3,36 @@ import AppIntents
 import SwiftUI
 
 @available(macOS 26.0, *)
+@MainActor
 struct OrganizeFilesIntent: AppIntent {
-    static var title: LocalizedStringResource = "Organize Files"
-    static var description = IntentDescription("Organize files in a directory using Apple Intelligence")
+    nonisolated static let title: LocalizedStringResource = "Organize Files"
+    nonisolated static let description = IntentDescription("Organize files in a directory using Apple Intelligence")
 
     @Parameter(title: "Directory")
     var directory: URL
 
-    func perform() async throws -> some ReturnsValue<OrganizationResult> & ShowsSnippetIntent {
-        let appState = AppState()
+    func perform() async throws -> some IntentResult {
         let manager  = FoundationModelsManager()
         await manager.initialize()
         let processor = FileProcessor(foundationModelsManager: manager)
         let result = try await processor.processDirectory(directory, isDryRun: true)
-        appState.addToHistory(result)
-        return .result(
-            value: result,
-            snippetIntent: OrganizationSnippetIntent(result: result)
-        )
+        // TODO: Add history tracking if needed
+        return .result(dialog: IntentDialog("Organized \(result.filesOrganized) files into \(result.categoriesCreated.count) categories"))
     }
 }
 
-@available(macOS 26.0, *)
-struct OrganizationSnippetIntent: SnippetIntent {
-    static var title: LocalizedStringResource = "Organization Results"
-
-    @Parameter var result: OrganizationResult
-
-    func perform() async throws -> some IntentResult & ShowsSnippetView {
-        return .result(view: OrganizationResultSnippetView(result: result))
-    }
-}
+// TODO: Re-enable snippet intent when OrganizationResult conforms to _IntentValue
+// @available(macOS 26.0, *)
+// @MainActor
+// struct OrganizationSnippetIntent: SnippetIntent {
+//     nonisolated static let title: LocalizedStringResource = "Organization Results"
+//
+//     @Parameter var result: OrganizationResult
+//
+//     func perform() async throws -> some IntentResult & ShowsSnippetView {
+//         return .result(view: OrganizationResultSnippetView(result: result))
+//     }
+// }
 
 @available(macOS 26.0, *)
 struct OrganizationResultSnippetView: View {
@@ -82,8 +81,9 @@ struct OrganizationResultSnippetView: View {
 }
 
 @available(macOS 26.0, *)
+@MainActor
 struct ViewInAppIntent: AppIntent {
-    static var title: LocalizedStringResource = "Open App"
+    nonisolated static let title: LocalizedStringResource = "Open App"
 
     func perform() async throws -> some IntentResult {
         return .result()

@@ -16,7 +16,7 @@ struct ContentView: View {
     @Environment(\.testFixtureFolder) private var fixturePath     // ← NEW
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var foundationModelsManager: FoundationModelsManager
-    @StateObject private var fileProcessor: FileProcessor
+    @State private var fileProcessor: FileProcessor
     private let metadataStore = MetadataStore()
     
     @State private var showingDirectoryPicker = false

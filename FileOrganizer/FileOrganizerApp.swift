@@ -20,36 +20,36 @@ struct FileOrganizerApp: App {
     
     var body: some Scene {
         WindowGroup {
-            if foundationModelsManager.isAvailable {
-                ContentView()
-                    .environmentObject(appState)
-                    .environmentObject(foundationModelsManager)
-                    .environment(\.testFixtureFolder,
-                                ProcessInfo.processInfo.environment["FIXTURE_PATH"])
-                    .onAppear {
-                        Task {
-                            await foundationModelsManager.initialize()
-                        }
-                    }
-            } else {
-                presentDemoScreen()
-                    .environmentObject(appState)
-                    .environmentObject(foundationModelsManager)
-                    .onAppear {
-                        Task {
-                            await foundationModelsManager.initialize()
-                        }
-                    }
-            }
+            rootView
+                .containerBackground(.ultraThinMaterial, for: .window)
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified)
-        .containerBackground(.ultraThinMaterial, for: .window)
         
         Settings {
             SettingsView()
                 .environmentObject(appState)
                 .environmentObject(foundationModelsManager)
+        }
+    }
+    
+    @ViewBuilder private var rootView: some View {
+        if foundationModelsManager.isAvailable {
+            ContentView()
+                .environmentObject(appState)
+                .environmentObject(foundationModelsManager)
+                .environment(\.testFixtureFolder,
+                             ProcessInfo.processInfo.environment["FIXTURE_PATH"])
+                .task {
+                    await foundationModelsManager.initialize()
+                }
+        } else {
+            presentDemoScreen()
+                .environmentObject(appState)
+                .environmentObject(foundationModelsManager)
+                .task {
+                    await foundationModelsManager.initialize()
+                }
         }
     }
 
