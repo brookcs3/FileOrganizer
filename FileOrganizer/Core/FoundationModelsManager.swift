@@ -65,9 +65,9 @@ class FoundationModelsManager: ObservableObject {
             let session = LanguageModelSession(instructions: instructionsText)
             self.session = session
 
-            self.sessionPool = SessionPool<LanguageModelSession>(maxParallel: 3) { [instructionsText] in
-
-                LanguageModelSession(instructions: instructionsText)
+            let poolInstructions = instructionsText // capture immutable copy
+            self.sessionPool = SessionPool<LanguageModelSession>(maxParallel: 3) { @Sendable in
+                LanguageModelSession(instructions: poolInstructions)
             }
             
         case .unavailable(.deviceNotEligible):
@@ -94,8 +94,9 @@ class FoundationModelsManager: ObservableObject {
         guard isAvailable else { return }
         let session = LanguageModelSession(instructions: instructionsText)
         self.session = session
-        self.sessionPool = SessionPool<LanguageModelSession>(maxParallel: 3) { [instructionsText] in
-            LanguageModelSession(instructions: instructionsText)
+        let poolInstructions = instructionsText
+        self.sessionPool = SessionPool<LanguageModelSession>(maxParallel: 3) { @Sendable in
+            LanguageModelSession(instructions: poolInstructions)
         }
     }
     
@@ -105,7 +106,6 @@ class FoundationModelsManager: ObservableObject {
         
         guard let pool = sessionPool else { throw FoundationModelsError.sessionNotAvailable }
         let session = try await pool.acquire()
-        defer { pool.release(session) }
         
         let safeContent = String(content.prefix(3_000))
         let prompt = """
@@ -120,7 +120,7 @@ class FoundationModelsManager: ObservableObject {
         
         let opts = GenerationOptions(temperature: temperature)
         
-        let response = try await (session as! LanguageModelSession).respond(
+        let response = try await session.respond(
             to: prompt,
             generating: FileMetadata.self,
             includeSchemaInPrompt: false,
@@ -128,6 +128,7 @@ class FoundationModelsManager: ObservableObject {
             )
         
         let meta = response.content
+        await pool.release(session)
         // Convert to your existing FileAnalysisResult
         return FileAnalysisResult(
             category      : meta.primaryCategory,
