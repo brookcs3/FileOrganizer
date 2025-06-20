@@ -39,7 +39,8 @@ struct FileAnalysisResult: @preconcurrency Codable, Identifiable, Sendable {
 }
 
 
-struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable, Sendable, IntentValue {
+@available(macOS 26.0, *)
+public struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable, IntentValue {
 
     let id: UUID
     let timestamp: Date
