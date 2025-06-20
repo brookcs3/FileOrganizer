@@ -15,7 +15,7 @@ struct OrganizeFilesIntent: AppIntent {
         let manager  = FoundationModelsManager()
         await manager.initialize()
         let processor = FileProcessor(foundationModelsManager: manager)
-        let result = try await processor.processDirectory(directory, isDryRun: true)
+        let result = try await processor.processDirectory(directory)
         // TODO: Add history tracking if needed
         return .result(dialog: IntentDialog("Organized \(result.filesOrganized) files into \(result.categoriesCreated.count) categories"))
     }

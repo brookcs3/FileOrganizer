@@ -113,18 +113,7 @@ struct ContentView: View {
 
                     
                     Divider()
-                    
-                    // Dry Run Toggle
-                    VStack(alignment: .leading, spacing: 8) {
-                        Toggle("Dry Run Mode", isOn: $appState.isDryRun)
-                            .font(.headline)
-                        
-                        Text("Preview changes without moving files")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.horizontal)
-                    
+
                     Spacer()
                     
                     // Navigation Buttons
@@ -311,8 +300,7 @@ struct ContentView: View {
         Task {
             do {
                 let result = try await fileProcessor.processDirectory(
-                    directory,
-                    isDryRun: appState.isDryRun
+                    directory
                 )
                 
                 appState.lastOrganizationResult = result
