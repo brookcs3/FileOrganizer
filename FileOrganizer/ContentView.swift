@@ -17,7 +17,7 @@ struct ContentView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var foundationModelsManager: FoundationModelsManager
     @StateObject private var fileProcessor: FileProcessor
-    @StateObject private var metadataStore = MetadataStore()
+    private let metadataStore = MetadataStore()
     
     @State private var showingDirectoryPicker = false
     @State private var showingSettings = false
@@ -28,7 +28,7 @@ struct ContentView: View {
     init() {
         // Initialize with a placeholder - will be updated in onAppear
         let placeholder = FoundationModelsManager()
-        _fileProcessor = StateObject(wrappedValue: FileProcessor(foundationModelsManager: placeholder))
+        _fileProcessor = State(wrappedValue: FileProcessor(foundationModelsManager: placeholder))
     }
     
     var body: some View {
@@ -108,6 +108,7 @@ struct ContentView: View {
 
                     }
                     .buttonStyle(.bordered)            // view modifiers belong outside the action
+                    .tint(.accentColor)
                     .padding(.horizontal)
 
                     
@@ -132,11 +133,13 @@ struct ContentView: View {
                             showingHistory = true
                         }
                         .buttonStyle(.bordered)
+                        .tint(.accentColor)
                         
                         Button("Settings") {
                             showingSettings = true
                         }
                         .buttonStyle(.bordered)
+                        .tint(.accentColor)
                     }
                     .padding(.horizontal)
                 }
@@ -213,6 +216,7 @@ struct ContentView: View {
                             }
                             .accessibilityIdentifier("organizeButton")            // ← NEW
                             .buttonStyle(.borderedProminent)
+                            .tint(.accentColor)
                             .disabled(appState.selectedDirectory == nil || fileProcessor.isProcessing || !foundationModelsManager.isAvailable)
                             .controlSize(.large)
                         }

@@ -10,6 +10,7 @@
 import SwiftUI
 import FoundationModels
 import Combine
+import Observation
 
 @available(macOS 26.0, *)
 @main
@@ -62,14 +63,15 @@ struct FileOrganizerApp: App {
 
 @available(macOS 26.0, *)
 @MainActor
+@Observable
 class AppState: ObservableObject {
-    @Published var selectedDirectory: URL?
-    @Published var isProcessing = false
-    @Published var processingProgress: Double = 0.0
-    @Published var processingStatus = ""
-    @Published var lastOrganizationResult: OrganizationResult?
-    @Published var organizationHistory: [OrganizationResult] = []
-    @Published var isDryRun = true
+    var selectedDirectory: URL?
+    var isProcessing = false
+    var processingProgress: Double = 0.0
+    var processingStatus = ""
+    var lastOrganizationResult: OrganizationResult?
+    var organizationHistory: [OrganizationResult] = []
+    var isDryRun = true
     
     func addToHistory(_ result: OrganizationResult) {
         organizationHistory.insert(result, at: 0)
