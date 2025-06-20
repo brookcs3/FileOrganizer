@@ -3,9 +3,7 @@ import AppIntents
 import SwiftUI
 
 @available(macOS 26.0, *)
-@MainActor
-
-struct OrganizeFilesIntent: @MainActor AppIntent {
+struct OrganizeFilesIntent: AppIntent {
     static var title: LocalizedStringResource = "Organize Files"
     static var description = IntentDescription("Organize files in a directory using Apple Intelligence")
 
@@ -18,7 +16,9 @@ struct OrganizeFilesIntent: @MainActor AppIntent {
         await manager.initialize()
         let processor = FileProcessor(foundationModelsManager: manager)
         let result = try await processor.processDirectory(directory, isDryRun: true)
-        appState.addToHistory(result)
+        await MainActor.run {
+            appState.addToHistory(result)
+        }
         return .result(
             value: result,
             snippetIntent: OrganizationSnippetIntent(result: result)
@@ -27,8 +27,7 @@ struct OrganizeFilesIntent: @MainActor AppIntent {
 }
 
 @available(macOS 26.0, *)
-@MainActor
-struct OrganizationSnippetIntent: @MainActor SnippetIntent {
+struct OrganizationSnippetIntent: SnippetIntent {
     static var title: LocalizedStringResource = "Organization Results"
 
     @Parameter
@@ -86,8 +85,7 @@ struct OrganizationResultSnippetView: View {
 }
 
 @available(macOS 26.0, *)
-@MainActor
-struct ViewInAppIntent: @MainActor AppIntent {
+struct ViewInAppIntent: AppIntent {
     static var title: LocalizedStringResource = "Open App"
 
     func perform() async throws -> some IntentResult {

@@ -39,7 +39,7 @@ struct FileAnalysisResult: @preconcurrency Codable, Identifiable {
 }
 
 
-struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable, IntentValue {
+struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable, Sendable, IntentValue {
     let id: UUID
     let timestamp: Date
     let sourceDirectory: String
