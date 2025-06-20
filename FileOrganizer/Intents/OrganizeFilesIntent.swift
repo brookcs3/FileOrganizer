@@ -11,7 +11,6 @@ struct OrganizeFilesIntent: AppIntent {
     @Parameter(title: "Directory")
     var directory: URL
 
-    @MainActor
     func perform() async throws -> some ReturnsValue<OrganizationResult> & ShowsSnippetIntent {
         let appState = AppState()
         let manager  = FoundationModelsManager()
@@ -95,7 +94,6 @@ struct OrganizationResultSnippetView: View {
 struct ViewInAppIntent: AppIntent {
     static var title: LocalizedStringResource = "Open App"
 
-    @MainActor
     func perform() async throws -> some IntentResult {
         .result()
     }
