@@ -33,6 +33,10 @@ struct OrganizationSnippetIntent: SnippetIntent {
     @Parameter
     var result: OrganizationResult
 
+    init(result: OrganizationResult) {
+        self.result = result
+    }
+
     func perform() async throws -> some IntentResult & ShowsSnippetView {
         .result(view: OrganizationResultSnippetView(result: result))
     }

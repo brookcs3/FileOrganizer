@@ -10,7 +10,7 @@
 import Foundation
 import AppIntents
 
-struct FileAnalysisResult: @preconcurrency Codable, Identifiable {
+struct FileAnalysisResult: @preconcurrency Codable, Identifiable, Sendable {
     let id: UUID
     let category: String
     let subcategory: String?
@@ -40,6 +40,7 @@ struct FileAnalysisResult: @preconcurrency Codable, Identifiable {
 
 
 struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable, Sendable, IntentValue {
+
     let id: UUID
     let timestamp: Date
     let sourceDirectory: String
