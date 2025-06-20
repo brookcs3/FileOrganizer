@@ -27,12 +27,15 @@ struct OrganizeFilesIntent: @MainActor AppIntent {
 }
 
 @available(macOS 26.0, *)
-@MainActor
-struct OrganizationSnippetIntent: @MainActor SnippetIntent {
+struct OrganizationSnippetIntent: SnippetIntent {
     static var title: LocalizedStringResource = "Organization Results"
 
     @Parameter
     var result: OrganizationResult
+
+    init(result: OrganizationResult) {
+        self.result = result
+    }
 
     func perform() async throws -> some IntentResult & ShowsSnippetView {
         .result(view: OrganizationResultSnippetView(result: result))
