@@ -72,12 +72,12 @@ struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable, Inte
     
     // MARK: - IntentValue conformance
     
-    func encode(into encoder: inout DataEncoder) throws {
+    func encode(into encoder: inout IntentEncoder) throws {
         let data = try JSONEncoder().encode(self)
         try encoder.encode(data)
     }
-    
-    init(from decoder: inout DataDecoder) throws {
+
+    init(from decoder: inout IntentDecoder) throws {
         let data = try decoder.decode(Data.self)
         self = try JSONDecoder().decode(OrganizationResult.self, from: data)
     }
