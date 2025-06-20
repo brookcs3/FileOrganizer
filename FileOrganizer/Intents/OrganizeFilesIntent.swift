@@ -4,6 +4,7 @@ import SwiftUI
 
 @available(macOS 26.0, *)
 @MainActor
+
 struct OrganizeFilesIntent: @MainActor AppIntent {
     static var title: LocalizedStringResource = "Organize Files"
     static var description = IntentDescription("Organize files in a directory using Apple Intelligence")
