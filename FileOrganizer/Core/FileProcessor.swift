@@ -76,7 +76,6 @@ class FileProcessor: ObservableObject {
                     var updated = file
                     updated.analysisResult = try await analyzeFileWithAI(file)
 
-
                     if let meta = updated.analysisResult {
                         do {
                             try await DirectorySummarySession.shared.add(

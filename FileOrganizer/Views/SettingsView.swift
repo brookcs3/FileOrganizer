@@ -21,12 +21,6 @@ struct SettingsView: View {
         NavigationView {
             Form {
                 Section("General") {
-                    Picker("Default Sorting Mode", selection: $settings.defaultSortingMode) {
-                        ForEach(SortingMode.allCases, id: \.self) { mode in
-                            Text(mode.rawValue).tag(mode)
-                        }
-                    }
-                    
                     Toggle("Enable Dry Run by Default", isOn: $settings.enableDryRunByDefault)
                     
                     Stepper("Max Files per Batch: \(settings.maxFilesPerBatch)",
@@ -41,7 +35,7 @@ struct SettingsView: View {
                             Text(strategy.rawValue).tag(strategy)
                         }
                     }
-                    
+
                     Text(settings.organizationStrategy.description)
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -148,7 +142,6 @@ struct SettingsView: View {
             try metadataStore.saveSettings(settings)
             
             // Apply settings to app state
-            appState.sortingMode = settings.defaultSortingMode
             appState.isDryRun = settings.enableDryRunByDefault
             
         } catch {
