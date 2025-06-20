@@ -18,7 +18,9 @@ struct OrganizeFilesIntent: AppIntent {
         await manager.initialize()
         let processor = FileProcessor(foundationModelsManager: manager)
         let result = try await processor.processDirectory(directory, isDryRun: true)
-        appState.addToHistory(result)
+        await MainActor.run {
+            appState.addToHistory(result)
+        }
         return .result(
             value: result,
             snippetIntent: OrganizationSnippetIntent(result: result)
@@ -34,6 +36,7 @@ struct OrganizationSnippetIntent: SnippetIntent {
     var result: OrganizationResult
 
     @MainActor
+
     func perform() async throws -> some IntentResult & ShowsSnippetView {
         .result(view: OrganizationResultSnippetView(result: result))
     }
