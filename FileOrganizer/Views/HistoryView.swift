@@ -78,17 +78,10 @@ struct HistoryRowView: View {
             HStack {
                 Image(systemName: result.isDryRun ? "eye" : "checkmark.circle.fill")
                     .foregroundColor(result.isDryRun ? .orange : .green)
-                
-                Text(result.mode)
-                    .font(.headline)
-                
-                Spacer()
-                
                 Text(result.timestamp, style: .relative)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            
             Text(result.summary)
                 .font(.body)
                 .lineLimit(2)
@@ -122,14 +115,7 @@ struct HistoryDetailView: View {
                     HStack {
                         Image(systemName: result.isDryRun ? "eye" : "checkmark.circle.fill")
                             .foregroundColor(result.isDryRun ? .orange : .green)
-                            .font(.title2)
-                        
-                        Text(result.mode)
-                            .font(.title2)
-                            .fontWeight(.bold)
-                        
                         Spacer()
-                        
                         if result.isDryRun {
                             Text("DRY RUN")
                                 .font(.caption)

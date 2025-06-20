@@ -64,7 +64,6 @@ struct FileOrganizerApp: App {
 @MainActor
 class AppState: ObservableObject {
     @Published var selectedDirectory: URL?
-    @Published var sortingMode: SortingMode = .aiIntelligent
     @Published var isProcessing = false
     @Published var processingProgress: Double = 0.0
     @Published var processingStatus = ""
