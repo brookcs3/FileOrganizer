@@ -47,11 +47,10 @@ struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable, Send
     let filesProcessed: Int
     let filesOrganized: Int
     let categoriesCreated: [String]
-    let isDryRun: Bool
     let duration: TimeInterval
     
     
-    init(sourceDirectory: String, targetDirectory: String, mode: String, filesProcessed: Int, filesOrganized: Int, categoriesCreated: [String], isDryRun: Bool, duration: TimeInterval) {
+    init(sourceDirectory: String, targetDirectory: String, mode: String, filesProcessed: Int, filesOrganized: Int, categoriesCreated: [String], duration: TimeInterval) {
         self.id = UUID()
         self.timestamp = Date()
         self.sourceDirectory = sourceDirectory
@@ -60,13 +59,11 @@ struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable, Send
         self.filesProcessed = filesProcessed
         self.filesOrganized = filesOrganized
         self.categoriesCreated = categoriesCreated  // Fix: assign categoriesCreated
-        self.isDryRun = isDryRun
         self.duration = duration
     }
     
     var summary: String {
-        let action = isDryRun ? "Would organize" : "Organized"
-        return "\(action) \(filesOrganized)/\(filesProcessed) files into \(categoriesCreated.count) categories"
+        return "Organized \(filesOrganized)/\(filesProcessed) files into \(categoriesCreated.count) categories"
     }
 }
 
@@ -93,7 +90,6 @@ struct OrganizationPlan {
     let sourceDirectory: URL
     let targetDirectory: URL
     let operations: [FileOperation]
-    let isDryRun: Bool
     
     var summary: String {
         let categories = Set(operations.map { $0.targetCategory }).count
@@ -117,7 +113,6 @@ struct FileOperation {
 // MARK: - Settings Models
 
 struct AppSettings: @preconcurrency Codable {
-    var enableDryRunByDefault = true
     var maxFilesPerBatch = 100
     var enableProgressNotifications = true
     var organizationStrategy: OrganizationStrategy = .createSubfolders

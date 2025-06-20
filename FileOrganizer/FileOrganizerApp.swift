@@ -71,7 +71,6 @@ class AppState: ObservableObject {
     var processingStatus = ""
     var lastOrganizationResult: OrganizationResult?
     var organizationHistory: [OrganizationResult] = []
-    var isDryRun = true
     
     func addToHistory(_ result: OrganizationResult) {
         organizationHistory.insert(result, at: 0)

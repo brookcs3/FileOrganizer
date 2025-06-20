@@ -32,8 +32,7 @@ class FileProcessor {
     }
     
     // MARK: - Main Processing Functions
-    func processDirectory(_ directoryURL: URL,
-                          isDryRun: Bool = true) async throws -> OrganizationResult {
+    func processDirectory(_ directoryURL: URL) async throws -> OrganizationResult {
 
         // ── Security-scoped URL bookkeeping ───────────────────────────────
         guard let bookmarkData = UserDefaults.standard.data(forKey: "selectedFolderBookmark") else {
@@ -108,7 +107,7 @@ class FileProcessor {
         currentStatus = "Executing organization..."
         progress      = 0.9
 
-        let execResult = try await executeOrganization(plan: plan, isDryRun: isDryRun)
+        let execResult = try await executeOrganization(plan: plan)
 
         progress      = 1
         currentStatus = "Complete"
@@ -131,7 +130,6 @@ class FileProcessor {
             filesProcessed    : total,
             filesOrganized    : execResult.filesOrganized,
             categoriesCreated : execResult.categoriesCreated,
-            isDryRun          : isDryRun,
             duration          : Date().timeIntervalSince(startTime)
         )
     }
@@ -270,8 +268,7 @@ class FileProcessor {
         return OrganizationPlan(
             sourceDirectory: sourceDirectory,
             targetDirectory: targetDirectory,
-            operations: operations,
-            isDryRun: true
+            operations: operations
         )
     }
 
@@ -293,33 +290,24 @@ class FileProcessor {
     
     // MARK: - Organization Execution
     
-    private func executeOrganization(plan: OrganizationPlan, isDryRun: Bool) async throws -> (filesOrganized: Int, categoriesCreated: [String]) {
+    private func executeOrganization(plan: OrganizationPlan) async throws -> (filesOrganized: Int, categoriesCreated: [String]) {
         var filesOrganized: Int? = nil
         var categoriesCreated: Set<String> = []
-        
-        if !isDryRun {
-            // Create target directory
-            try fileManager.createDirectory(at: plan.targetDirectory, withIntermediateDirectories: true)
-        }
+
+        try fileManager.createDirectory(at: plan.targetDirectory, withIntermediateDirectories: true)
         
         for operation in plan.operations {
             switch operation.operation {
             case .createDirectory:
-                if !isDryRun {
-                    try fileManager.createDirectory(at: operation.targetURL, withIntermediateDirectories: true)
-                }
+                try fileManager.createDirectory(at: operation.targetURL, withIntermediateDirectories: true)
                 categoriesCreated.insert(operation.targetCategory)
                 
             case .move:
-                if !isDryRun {
-                    try fileManager.moveItem(at: operation.sourceURL, to: operation.targetURL)
-                }
+                try fileManager.moveItem(at: operation.sourceURL, to: operation.targetURL)
                 filesOrganized = (filesOrganized ?? 0) + 1
                 
             case .copy:
-                if !isDryRun {
-                    try fileManager.copyItem(at: operation.sourceURL, to: operation.targetURL)
-                }
+                try fileManager.copyItem(at: operation.sourceURL, to: operation.targetURL)
                 filesOrganized = (filesOrganized ?? 0) + 1
             }
         }
