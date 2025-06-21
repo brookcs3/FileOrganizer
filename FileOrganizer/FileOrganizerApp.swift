@@ -60,4 +60,3 @@ struct FileOrganizerApp: App {
             .padding()
     }
 }
-

@@ -111,7 +111,6 @@ struct ContentView: View {
             }
         }
     }
-
     
     private func selectDirectory() {
         if let path = fixturePath {  // test run: folder predefined
