@@ -2,42 +2,32 @@ name: Summarize and Suggest Features
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+
+permissions:
+  contents: read
+  models: read
 
 jobs:
   summarize-and-suggest:
     runs-on: macos-latest
     permissions:
       contents: read
+      models: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Run AI inference with GitHub Copilot
+      - name: Run AI inference with GitHub-hosted model
         id: inference
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4.1    # or use 'github/copilot'
+          prompt: |
+            Summarize the current state and key functionalities of the code in this repository clearly and concisely.
+            Then, suggest exciting, competitive, or sought-after features that could enhance this project.
+
+      - name: Output AI summary and feature suggestions
         run: |
-          pip install requests
-          python - <<EOF
-          import os
-          import requests
-
-          headers = {
-              'Authorization': f'Bearer {os.getenv("GITHUB_TOKEN")}',
-              'Content-Type': 'application/json'
-          }
-          data = {
-              'model': 'github/copilot',
-              'prompt': 'Summarize the current state and key functionalities of the code in this repository clearly and concisely. Then, suggest exciting, competitive, or sought-after features that could enhance this project.'
-          }
-
-          response = requests.post('https://models.github.ai/inference', headers=headers, json=data)
-          print(response.json())
-          EOF
+          echo "${{ steps.inference.outputs.response }}"
