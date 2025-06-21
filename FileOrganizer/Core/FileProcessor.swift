@@ -384,6 +384,123 @@ class FileProcessor {
 
         return (filesOrganized: filesOrganized ?? 0, categoriesCreated: Array(categoriesCreated))
     }
+    
+    // MARK: - Extracted Helper Methods for Refactoring
+    
+    private func setupSecurityScopedAccess(for directoryURL: URL) throws {
+        guard let bookmarkData = UserDefaults.standard.data(forKey: "selectedFolderBookmark") else {
+            throw NSError(domain: "FileOrganizerError", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "No bookmark found"])
+        }
+        var isStale = false
+        let secureURL = try URL(resolvingBookmarkData: bookmarkData,
+                                options: .withSecurityScope,
+                                relativeTo: nil,
+                                bookmarkDataIsStale: &isStale)
+        guard secureURL.startAccessingSecurityScopedResource() else {
+            throw NSError(domain: "FileOrganizerError", code: 2,
+                          userInfo: [NSLocalizedDescriptionKey: "Failed to access directory"])
+        }
+        // Note: stopAccessingSecurityScopedResource() should be called by caller
+    }
+    
+    private func initializeProcessingState() {
+        isProcessing = true
+        progress = 0
+        currentStatus = "Scanning directory..."
+    }
+    
+    private func analyzeFilesInParallel(_ fileItems: [FileItem]) async throws -> [FileItem] {
+        currentStatus = "Found \(fileItems.count) files"
+        progress = 0.1
+        
+        var processedFiles: [FileItem?] = Array(repeating: nil, count: fileItems.count)
+        let total = fileItems.count
+        var completedCount = 0
+        
+        await withTaskGroup(of: (Int, FileItem).self) { group in
+            var inFlight = 0
+            var fileIterator = fileItems.enumerated().makeIterator()
+            
+            // Fill the group up to 3 concurrent tasks
+            while inFlight < 3, let (index, file) = fileIterator.next() {
+                group.addTask {
+                    await self.processFileTask(file, index: index)
+                }
+                inFlight += 1
+            }
+            
+            for await (index, resultFile) in group {
+                processedFiles[index] = resultFile
+                completedCount += 1
+                progress = 0.1 + 0.7 * Double(completedCount) / Double(total)
+                
+                // Always keep up to 3 tasks in flight
+                if let (nextIndex, nextFile) = fileIterator.next() {
+                    group.addTask {
+                        await self.processFileTask(nextFile, index: nextIndex)
+                    }
+                }
+            }
+        }
+        
+        return processedFiles.compactMap(\.self)
+    }
+    
+    private func processFileTask(_ file: FileItem, index: Int) async -> (Int, FileItem) {
+        var mutableFile = file
+        
+        // Create a new independent AI session for this task
+        let aiSession = await foundationModelsManager.makeNewSession()
+        mutableFile.analysisResult = try? await aiSession.analyzeFileContent(
+            try await extractFileContent(mutableFile),
+            fileName: mutableFile.name,
+            fileType: mutableFile.type
+        )
+        
+        if let meta = mutableFile.analysisResult {
+            do {
+                try await DirectorySummarySession.shared.add(FileMetadata(
+                    primaryCategory: meta.category,
+                    secondaryCategory: meta.subcategory,
+                    suggestedFilename: meta.suggestedName,
+                    summary: meta.description,
+                    tags: meta.tags,
+                    confidence: meta.confidence
+                ))
+            } catch {
+                print("Summary update failed for \(file.name): \(error)")
+            }
+        }
+        
+        // Simulate pacing
+        try? await Task.sleep(nanoseconds: 10_000_000)
+        return (index, mutableFile)
+    }
+    
+    private func createAndExecutePlan(files: [FileItem], sourceDirectory: URL) async -> OrganizationPlan {
+        currentStatus = "Creating organization plan..."
+        progress = 0.8
+        
+        return createOrganizationPlan(files: files, sourceDirectory: sourceDirectory)
+    }
+    
+    private func generateGlobalAdvice() async -> String {
+        do {
+            let advice = try await DirectorySummarySession.shared.globalAdvice()
+            Logger().info("Continuity advice: \(advice)")
+            return advice
+        } catch {
+            Logger().error("Failed to get global advice: \(error)")
+            return "No global advice available"
+        }
+    }
+    
+    private func finalizeProcessingState() {
+        progress = 1
+        currentStatus = "Complete"
+        isProcessing = false
+    }
 }
 
 extension Array where Element == String {
