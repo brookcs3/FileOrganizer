@@ -169,6 +169,7 @@ struct ContentView: View {
                             }
                         }
                     }
+                    selectDirectory()
                 }
                 .buttonStyle(.bordered)
                 .tint(.accentColor)
@@ -365,6 +366,43 @@ struct ContentView: View {
     }
 
     // NOTE: RestoreManager remains in project but dormant for future development
+    
+    private func selectDirectory() {
+        if let path = fixturePath {  // test run: folder predefined
+            appState.selectedDirectory = URL(fileURLWithPath: path)
+        } else {  // normal flow: show open-panel
+            showDirectoryPicker()
+        }
+    }
+    
+    private func showDirectoryPicker() {
+        let openPanel = NSOpenPanel()
+        openPanel.canChooseDirectories = true
+        openPanel.canChooseFiles = false
+        openPanel.allowsMultipleSelection = false
+        openPanel.message = "Select a folder to organize"
+
+        if openPanel.runModal() == .OK,
+            let selectedURL = openPanel.url
+        {
+            createBookmarkAndSelectDirectory(selectedURL)
+        }
+    }
+    
+    private func createBookmarkAndSelectDirectory(_ selectedURL: URL) {
+        do {
+            let bookmark = try selectedURL.bookmarkData(
+                options: .withSecurityScope
+            )
+            UserDefaults.standard.set(
+                bookmark,
+                forKey: "selectedFolderBookmark"
+            )
+            appState.selectedDirectory = selectedURL
+        } catch {
+            print("Failed to create bookmark: \(error)")
+        }
+    }
 
     private func showAlert(_ message: String) {
         alertMessage = message

@@ -116,7 +116,7 @@ struct SettingsView: View {
             updateCacheSize()
         }
         .alert("Clear Cache", isPresented: $showingClearCacheAlert) {
-            Button("Cancel", role: .cancel) { }
+            Button("Cancel", role: .cancel) { /* Dismiss alert automatically */ }
             Button("Clear", role: .destructive) {
                 clearCache()
             }

@@ -62,8 +62,8 @@ class FoundationModelsManager: ObservableObject {
             self.availabilityStatus = "Foundation Model Available"
 
             // Create a session for file analysis and a small pool for parallel work
-            let session = LanguageModelSession(instructions: instructionsText)
-            self.session = session
+            let newSession = LanguageModelSession(instructions: instructionsText)
+            self.session = newSession
 
             self.sessionPool = SessionPool<LanguageModelSession>(maxParallel: 3) { @Sendable [instructionsText] in
 
@@ -92,8 +92,8 @@ class FoundationModelsManager: ObservableObject {
     /// Resets the Foundation Models session, ensuring a fresh context for each file.
     func resetSession() {
         guard isAvailable else { return }
-        let session = LanguageModelSession(instructions: instructionsText)
-        self.session = session
+        let newSession = LanguageModelSession(instructions: instructionsText)
+        self.session = newSession
     }
 
     func analyzeFileContent(_ content: String,
