@@ -9,7 +9,7 @@ import SwiftUI
 
 @available(macOS 26.0, *)
 struct HistoryView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @State private var selectedResult: OrganizationResult?
 
     var body: some View {

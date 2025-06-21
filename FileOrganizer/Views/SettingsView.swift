@@ -9,7 +9,7 @@ import SwiftUI
 
 @available(macOS 26.0, *)
 struct SettingsView: View {
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @EnvironmentObject var foundationModelsManager: FoundationModelsManager
     @StateObject private var metadataStore = MetadataStore()
 

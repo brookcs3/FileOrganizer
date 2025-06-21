@@ -14,10 +14,9 @@ import UniformTypeIdentifiers
 @available(macOS 26.0, *)
 struct ContentView: View {
     @Environment(\.testFixtureFolder) private var fixturePath
-    @EnvironmentObject var appState: AppState
+    @Environment(AppState.self) private var appState
     @EnvironmentObject var foundationModelsManager: FoundationModelsManager
     @State private var fileProcessor: FileProcessor
-    private let metadataStore = MetadataStore()
 
     @State private var showingDirectoryPicker = false
     @State private var showingSettings = false
@@ -36,9 +35,17 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView {
-            sidebarView
+            SidebarView(
+                showingDirectoryPicker: $showingDirectoryPicker,
+                showingHistory: $showingHistory,
+                showingSettings: $showingSettings
+            )
         } detail: {
-            detailView
+            DetailView(
+                fileProcessor: fileProcessor,
+                showingAlert: $showingAlert,
+                alertMessage: $alertMessage
+            )
         }
         .navigationTitle("File Organizer")
         .containerBackground(.ultraThinMaterial, for: .window)
@@ -60,12 +67,12 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
-                .environmentObject(appState)
+                .environment(appState)
                 .environmentObject(foundationModelsManager)
         }
         .sheet(isPresented: $showingHistory) {
             HistoryView()
-                .environmentObject(appState)
+                .environment(appState)
         }
         .alert("Error", isPresented: $showingAlert) {
             Button("OK") { /* Dismiss alert automatically */ }
@@ -83,268 +90,9 @@ struct ContentView: View {
 
             // Load organization history
             Task {
-                do {
-                    appState.organizationHistory =
-                        try metadataStore.loadOrganizationHistory()
-                } catch {
-                    print("Failed to load history: \(error)")
-                }
+                await appState.loadHistory()
             }
         }
-    }
-
-    // MARK: – Sidebar ---------------------------------------------------------
-
-    private var sidebarView: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Header
-            VStack(alignment: .leading, spacing: 4) {
-                Text("File Organizer")
-                    .font(.title2)
-                    .fontWeight(.bold)
-
-                Text("AI-powered file organization")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding(.horizontal)
-
-            Divider()
-
-            // Directory Selection
-            VStack(alignment: .leading, spacing: 8) {
-                Label("Source Directory", systemImage: "folder")
-                    .font(.headline)
-
-                if let directory = appState.selectedDirectory {
-                    HStack {
-                        Image(systemName: "folder.fill")
-                            .foregroundColor(.blue)
-
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(directory.lastPathComponent)
-                                .font(.body)
-                                .lineLimit(1)
-
-                            Text(directory.path)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .lineLimit(2)
-                        }
-
-                        Spacer()
-                    }
-                    .padding(8)
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(8)
-                } else {
-                    Text("No directory selected")
-                        .foregroundColor(.secondary)
-                        .italic()
-                }
-
-                Button("Select Directory") {
-                    if let path = fixturePath {  // test run: folder predefined
-                        appState.selectedDirectory = URL(fileURLWithPath: path)
-                    } else {  // normal flow: show open-panel
-                        let openPanel = NSOpenPanel()
-                        openPanel.canChooseDirectories = true
-                        openPanel.canChooseFiles = false
-                        openPanel.allowsMultipleSelection = false
-                        openPanel.message = "Select a folder to organize"
-
-                        if openPanel.runModal() == .OK,
-                            let selectedURL = openPanel.url {
-                            do {
-                                let bookmark = try selectedURL.bookmarkData(
-                                    options: .withSecurityScope
-                                )
-                                UserDefaults.standard.set(
-                                    bookmark,
-                                    forKey: "selectedFolderBookmark"
-                                )
-                                appState.selectedDirectory = selectedURL
-                            } catch {
-                                print("Failed to create bookmark: \(error)")
-                            }
-                        }
-                    }
-                    selectDirectory()
-                }
-                .buttonStyle(.bordered)
-                .tint(.accentColor)
-                .padding(.horizontal)
-
-                // 🐛 Debug memory export ----------------------------------------
-                Button("🐛 Debug Memory (\(Int(Date().timeIntervalSince1970)))") {
-                    Task {
-                        let session = DirectorySummarySession.shared
-                        let batchSize = 1_500
-                        var startLine = debugMemoryLastLine
-
-                        do {
-                            let totalLines = try await session.memoryLineCount()
-                            repeat {
-                                try await session.batchedDebugExportMemory(
-                                    batchSize: batchSize,
-                                    startLine: startLine
-                                )
-                                startLine += batchSize
-                                debugMemoryLastLine = startLine
-                            } while startLine < totalLines
-
-                            debugMemoryLastLine = 0
-                            showAlert("Memory export complete")
-                        } catch {
-                            showAlert(
-                                "Export failed: \(error.localizedDescription)"
-                            )
-                        }
-                    }
-                }
-                .buttonStyle(.bordered)
-                .tint(.orange)
-                .controlSize(.small)
-                .padding(.horizontal)
-                .disabled(fileProcessor.isProcessing)
-
-                Divider()
-                Spacer()
-
-                // Navigation Buttons
-                VStack(spacing: 8) {
-                    Button("History") { showingHistory = true }
-                        .buttonStyle(.bordered)
-                        .tint(.accentColor)
-
-                    Button("Settings") { showingSettings = true }
-                        .buttonStyle(.bordered)
-                        .tint(.accentColor)
-                }
-                .padding(.horizontal)
-            }
-            .padding(.vertical)
-            .frame(minWidth: 280, maxWidth: 320)
-        }
-    }
-
-    // MARK: – Detail ----------------------------------------------------------
-
-    private var detailView: some View {
-        VStack(spacing: 20) {
-            // Status Header
-            VStack(spacing: 8) {
-                HStack {
-                    Image(
-                        systemName: foundationModelsManager.isAvailable
-                            ? "brain.head.profile"
-                            : "exclamationmark.triangle"
-                    )
-                    .foregroundColor(
-                        foundationModelsManager.isAvailable ? .green : .orange
-                    )
-                    .font(.title2)
-
-                    VStack(alignment: .leading) {
-                        Text("Apple Intelligence")
-                            .font(.headline)
-
-                        Text(foundationModelsManager.availabilityStatus)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    Spacer()
-                }
-                .liquidGlassBackground()
-            }
-
-            // Main Action Area
-            VStack(spacing: 16) {
-                if fileProcessor.isProcessing {
-                    // Processing View
-                    VStack(spacing: 12) {
-                        ProgressView(value: fileProcessor.progress)
-                            .accessibilityIdentifier("organizeProgress")
-                            .progressViewStyle(.linear)
-                            .frame(maxWidth: 400)
-
-                        Text(fileProcessor.currentStatus)
-                            .font(.body)
-                            .foregroundColor(.secondary)
-
-                        Text("\(Int(fileProcessor.progress * 100))% Complete")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(24)
-                    .liquidGlassBackground()
-                } else {
-                    // Ready State
-                    VStack(spacing: 16) {
-                        Image(systemName: "folder.badge.gearshape")
-                            .font(.system(size: 48))
-                            .foregroundColor(.blue)
-
-                        Text("Ready to Organize")
-                            .font(.title2)
-                            .fontWeight(.semibold)
-
-                        if appState.selectedDirectory != nil {
-                            Text("Click 'Organize Files' to start processing")
-                                .foregroundColor(.secondary)
-                        } else {
-                            Text("Select a directory to get started")
-                                .foregroundColor(.secondary)
-                        }
-
-                        Button("Organize Files") {
-                            organizeFiles()
-                        }
-                        .accessibilityIdentifier("organizeButton")
-                        .buttonStyle(.borderedProminent)
-                        .tint(.accentColor)
-                        .disabled(
-                            appState.selectedDirectory == nil
-                                || fileProcessor.isProcessing
-                                || !foundationModelsManager.isAvailable
-                        )
-                        .controlSize(.large)
-                    }
-                    .padding(32)
-                    .liquidGlassBackground()
-                }
-            }
-
-            // Last Result
-            if let lastResult = appState.lastOrganizationResult {
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("Last Organization", systemImage: "clock")
-                        .font(.headline)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(lastResult.summary)
-                            .font(.body)
-
-                        HStack {
-                            Text(
-                                "Duration: \(String(format: "%.1f", lastResult.duration))s"
-                            )
-                            Spacer()
-                            Text(lastResult.timestamp, style: .relative)
-                        }
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    }
-                    .liquidGlassBackground()
-                }
-                .padding()
-                .liquidGlassBackground()
-            }
-
-            Spacer()
-        }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // MARK: – Helpers ---------------------------------------------------------
@@ -357,14 +105,13 @@ struct ContentView: View {
                 let result = try await fileProcessor.processDirectory(directory)
                 appState.lastOrganizationResult = result
                 appState.addToHistory(result)
-                try metadataStore.saveOrganizationResult(result)  // persist
+                appState.saveResult(result)
             } catch {
                 showAlert("Organization failed: \(error.localizedDescription)")
             }
         }
     }
 
-    // NOTE: RestoreManager remains in project but dormant for future development
     
     private func selectDirectory() {
         if let path = fixturePath {  // test run: folder predefined
@@ -375,30 +122,8 @@ struct ContentView: View {
     }
     
     private func showDirectoryPicker() {
-        let openPanel = NSOpenPanel()
-        openPanel.canChooseDirectories = true
-        openPanel.canChooseFiles = false
-        openPanel.allowsMultipleSelection = false
-        openPanel.message = "Select a folder to organize"
-
-        if openPanel.runModal() == .OK,
-            let selectedURL = openPanel.url {
-            createBookmarkAndSelectDirectory(selectedURL)
-        }
-    }
-    
-    private func createBookmarkAndSelectDirectory(_ selectedURL: URL) {
-        do {
-            let bookmark = try selectedURL.bookmarkData(
-                options: .withSecurityScope
-            )
-            UserDefaults.standard.set(
-                bookmark,
-                forKey: "selectedFolderBookmark"
-            )
+        if let selectedURL = DirectoryPickerService.selectDirectory() {
             appState.selectedDirectory = selectedURL
-        } catch {
-            print("Failed to create bookmark: \(error)")
         }
     }
 

@@ -14,7 +14,6 @@ import Foundation
 /// Approval/Golden Master Testing framework for FileOrganizer
 /// These tests capture current behavior to prevent regressions during refactoring
 struct ApprovalTests {
-    
     // MARK: - Test Constants
     
     private enum ApprovalConstants {
@@ -147,7 +146,9 @@ struct ApprovalTests {
         Summary: \(plan.summary)
         
         Operations:
-        \(operations.map { "- \($0.sourceURL.lastPathComponent) → \($0.targetCategory)/\($0.targetURL.lastPathComponent)" }.joined(separator: "\n"))
+        \(operations.map { 
+            "- \($0.sourceURL.lastPathComponent) → \($0.targetCategory)/\($0.targetURL.lastPathComponent)" 
+        }.joined(separator: "\n"))
         """
         
         try approveString(output, testName: "OrganizationPlan_Structure")
@@ -240,7 +241,16 @@ struct ApprovalTests {
                 // Generate diff for debugging
                 let diffOutput = generateDiff(approved: approvedContent, received: content, testName: testName)
                 
-                #expect(Bool(false), "❌ APPROVAL TEST FAILED: \(testName)\n\n\(diffOutput)\n\nTo approve changes, copy:\n\(receivedFile.path)\nto:\n\(approvedFile.path)")
+                #expect(Bool(false), """
+                    ❌ APPROVAL TEST FAILED: \(testName)
+                    
+                    \(diffOutput)
+                    
+                    To approve changes, copy:
+                    \(receivedFile.path)
+                    to:
+                    \(approvedFile.path)
+                    """)
             } else {
                 // Test passed - clean up received file
                 try? FileManager.default.removeItem(at: receivedFile)
@@ -284,7 +294,7 @@ struct ApprovalTests {
 
 extension Bundle {
     static var testBundle: Bundle {
-        return Bundle(for: FileOrganizerTests.self)
+        Bundle(for: FileOrganizerTests.self)
     }
 }
 
@@ -292,7 +302,7 @@ extension Bundle {
 
 extension String {
     static func *(lhs: String, rhs: Int) -> String {
-        return String(repeating: lhs, count: rhs)
+        String(repeating: lhs, count: rhs)
     }
 }
 

@@ -14,7 +14,6 @@ import Foundation
 /// Simplified Approval Testing for FileOrganizer
 /// These tests validate that core structures remain stable during refactoring
 struct SimpleApprovalTests {
-    
     // MARK: - Core Model Stability Tests
     
     @Test @MainActor

@@ -141,7 +141,7 @@ class FileProcessor {
     // This method is no longer used directly in the task; analysis now happens inside the task with a per-task session.
     private func analyzeFileWithAI(_ fileItem: FileItem) async throws -> FileAnalysisResult {
         // Extract content based on file type
-        let content = try await extractFileContent(fileItem)
+        let content = try await FileContentExtractor.extractContent(from: fileItem)
 
         // Use Foundation Models for analysis
         return try await foundationModelsManager.analyzeFileContent(
@@ -149,56 +149,6 @@ class FileProcessor {
             fileName: fileItem.name,
             fileType: fileItem.type
         )
-    }
-
-    private func extractFileContent(_ fileItem: FileItem) async throws -> String {
-        let fileType = fileItem.fileExtension.lowercased()
-
-        // Limit content extraction to respect token limits
-        switch fileType {
-        case "txt", "md", "rtf":
-            return try extractTextContent(from: fileItem.url, maxLength: 566)
-        case "pdf":
-            return try extractPDFContent(from: fileItem.url, maxLength: 566)
-        case "docx", "doc":
-            return try extractDocumentContent(from: fileItem.url, maxLength: 566)
-        case "wav", "aiff", "flac", "ogg", "mp3", "m4a":
-            // Special handling for audio/sound library files
-            let nameLower = fileItem.name.lowercased()
-            var tags: [String] = []
-            if nameLower.hasPrefix("m_") { tags.guess("Male") } // maybe m_ means male?
-            if nameLower.hasPrefix("f_") { tags.guess("Female") } /// maybe f_ means female?
-            if nameLower.contains("R121") { tags.guess("ROyer 121") } // Maybe model number?
-            if nameLower.contains("U47") { tags.guess("TelefunkenU47") }
-            let isLikelySoundEffect = !tags.isEmpty
-            let description: String
-            if isLikelySoundEffect {
-                description = "Audio (potential sound librayr): " + tags.joined(separator: ", ") + ", " + fileItem.name
-            } else {
-                description = "Audio file (potential music track): \(fileItem.name)"
-            }
-            return String(description.prefix(566))
-        case "jpg", "jpeg", "png", "gif", "bmp", "tiff", "heic":
-            return "Image file: \(fileItem.name)"
-        default:
-            let summary = "File: \(fileItem.name), Type: \(fileType), Size: \(fileItem.displaySize)"
-            return String(summary.prefix(566))
-        }
-    }
-
-    private func extractTextContent(from url: URL, maxLength: Int) throws -> String {
-        let content = try String(contentsOf: url, encoding: .utf8)
-        return String(content.prefix(700))
-    }
-
-    private func extractPDFContent(from url: URL, maxLength: Int) throws -> String {
-        // Basic PDF content extraction - in a real app, use PDFKit
-        "PDF document: \(url.lastPathComponent)"
-    }
-
-    private func extractDocumentContent(from url: URL, maxLength: Int) throws -> String {
-        // Basic document content extraction - in a real app, use proper document parsing
-        "Document: \(url.lastPathComponent)"
     }
 
     // MARK: - Organization Planning
@@ -356,7 +306,7 @@ class FileProcessor {
         // Create a new independent AI session for this task
         let aiSession = await foundationModelsManager.makeNewSession()
         mutableFile.analysisResult = try? await aiSession.analyzeFileContent(
-            try await extractFileContent(mutableFile),
+            try await FileContentExtractor.extractContent(from: mutableFile),
             fileName: mutableFile.name,
             fileType: mutableFile.type
         )
@@ -403,12 +353,5 @@ class FileProcessor {
         progress = 1
         currentStatus = "Complete"
         isProcessing = false
-    }
-}
-
-extension Array where Element == String {
-    /// Appends a value, but expresses 'guessing' intent.
-    mutating func guess(_ value: String) {
-        self.append(value)
     }
 }

@@ -1,0 +1,115 @@
+digraph FileOrganizerDependencies {
+    rankdir=TB;
+    node [shape=box, style=rounded];
+    
+    // Define component clusters
+    subgraph cluster_core {
+        label="Core Components";
+        style=filled;
+        color=lightblue;
+                "SessionPool" [fillcolor=lightcyan, style=filled];
+        "LanguageModelSessionProtocol" [fillcolor=lightcyan, style=filled];
+        "Environment+Keys" [fillcolor=lightcyan, style=filled];
+        "FileOrganizerApp" [fillcolor=lightcyan, style=filled];
+        "DirectorySummarySession" [fillcolor=lightcyan, style=filled];
+        "ContentView" [fillcolor=lightcyan, style=filled];
+        "AppState" [fillcolor=lightcyan, style=filled];
+        "RestoreFileWriter" [fillcolor=lightcyan, style=filled];
+        "RestoreMetadata" [fillcolor=lightcyan, style=filled];
+        "FileProcessor" [fillcolor=lightcyan, style=filled];
+        "RestoreFileParser" [fillcolor=lightcyan, style=filled];
+        "TokenCompressionEngine" [fillcolor=lightcyan, style=filled];
+        "FileContentExtractor" [fillcolor=lightcyan, style=filled];
+        "FoundationModelsManager" [fillcolor=lightcyan, style=filled];
+        "RestoreManager" [fillcolor=lightcyan, style=filled];
+    }
+    
+    subgraph cluster_views {
+        label="Views";
+        style=filled;
+        color=lightgreen;
+                "DetailView" [fillcolor=lightgreen, style=filled];
+        "SettingsView" [fillcolor=lightgreen, style=filled];
+        "LiquidGlass" [fillcolor=lightgreen, style=filled];
+        "SidebarView" [fillcolor=lightgreen, style=filled];
+        "HistoryView" [fillcolor=lightgreen, style=filled];
+    }
+    
+    subgraph cluster_models {
+        label="Models";
+        style=filled;
+        color=lightyellow;
+                "FileAnalysisResult" [fillcolor=lightyellow, style=filled];
+    }
+    
+    // Dependencies
+    "SessionPool" -> "FileAnalysisResult";
+    "SessionPool" -> "LanguageModelSessionProtocol";
+    "LanguageModelSessionProtocol" -> "FoundationModelsManager";
+    "Environment+Keys" -> "FileAnalysisResult";
+    "FileOrganizerApp" -> "FileProcessor";
+    "FileOrganizerApp" -> "ContentView";
+    "FileOrganizerApp" -> "LiquidGlass";
+    "FileOrganizerApp" -> "FoundationModelsManager";
+    "FileOrganizerApp" -> "SettingsView";
+    "FileOrganizerApp" -> "FileAnalysisResult";
+    "FileOrganizerApp" -> "AppState";
+    "DirectorySummarySession" -> "FoundationModelsManager";
+    "DirectorySummarySession" -> "FileAnalysisResult";
+    "DirectorySummarySession" -> "LanguageModelSessionProtocol";
+    "ContentView" -> "MetadataStore";
+    "ContentView" -> "SidebarView";
+    "ContentView" -> "FileProcessor";
+    "ContentView" -> "RestoreManager";
+    "ContentView" -> "LiquidGlass";
+    "ContentView" -> "FoundationModelsManager";
+    "ContentView" -> "DetailView";
+    "ContentView" -> "FileAnalysisResult";
+    "ContentView" -> "AppState";
+    "ContentView" -> "SettingsView";
+    "ContentView" -> "HistoryView";
+    "AppState" -> "FileAnalysisResult";
+    "RestoreFileWriter" -> "FileAnalysisResult";
+    "RestoreFileWriter" -> "RestoreManager";
+    "RestoreMetadata" -> "FileAnalysisResult";
+    "RestoreMetadata" -> "RestoreManager";
+    "FileProcessor" -> "FoundationModelsManager";
+    "FileProcessor" -> "FileAnalysisResult";
+    "FileProcessor" -> "FileContentExtractor";
+    "RestoreFileParser" -> "FileAnalysisResult";
+    "RestoreFileParser" -> "RestoreManager";
+    "TokenCompressionEngine" -> "FileAnalysisResult";
+    "FileContentExtractor" -> "FileAnalysisResult";
+    "FileContentExtractor" -> "FileProcessor";
+    "FoundationModelsManager" -> "FileAnalysisResult";
+    "FoundationModelsManager" -> "LanguageModelSessionProtocol";
+    "RestoreManager" -> "RestoreFileWriter";
+    "RestoreManager" -> "RestoreFileParser";
+    "RestoreManager" -> "RestoreMetadata";
+    "RestoreManager" -> "FileAnalysisResult";
+    "OrganizationResult+AppEntity" -> "FileAnalysisResult";
+    "OrganizationResult+AppEntity" -> "FileProcessor";
+    "OrganizeFilesIntent" -> "LiquidGlass";
+    "OrganizeFilesIntent" -> "FoundationModelsManager";
+    "OrganizeFilesIntent" -> "FileAnalysisResult";
+    "OrganizeFilesIntent" -> "FileProcessor";
+    "DetailView" -> "FileProcessor";
+    "DetailView" -> "LiquidGlass";
+    "DetailView" -> "FoundationModelsManager";
+    "DetailView" -> "FileAnalysisResult";
+    "DetailView" -> "AppState";
+    "SettingsView" -> "MetadataStore";
+    "SettingsView" -> "LiquidGlass";
+    "SettingsView" -> "FoundationModelsManager";
+    "SettingsView" -> "FileAnalysisResult";
+    "SettingsView" -> "AppState";
+    "SidebarView" -> "LiquidGlass";
+    "SidebarView" -> "FileAnalysisResult";
+    "SidebarView" -> "AppState";
+    "HistoryView" -> "LiquidGlass";
+    "HistoryView" -> "FileAnalysisResult";
+    "HistoryView" -> "AppState";
+    "HistoryView" -> "FileContentExtractor";
+    "MetadataStore" -> "FileAnalysisResult";
+    "MetadataStore" -> "FileContentExtractor";
+}

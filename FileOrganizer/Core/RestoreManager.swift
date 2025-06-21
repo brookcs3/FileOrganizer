@@ -7,10 +7,12 @@
 
 import Foundation
 
+// MARK: - Restore Constants
 private enum RestoreConstants {
     static let restoreFileName = ".restore.md"
 }
 
+// MARK: - Restore Manager
 class RestoreManager {
     private static let fileIdentifierKey = "com.filesorter.uuid"
 
@@ -23,30 +25,14 @@ class RestoreManager {
         let modificationDate: Date
     }
 
-    // MARK: - Extended Attributes
+    // MARK: - Extended Attributes (Delegated to RestoreMetadata)
 
     static func setFileUUID(_ uuid: String, for url: URL) -> Bool {
-        let path = url.path
-        let result = setxattr(path, fileIdentifierKey, uuid, uuid.count, 0, 0)
-        return result == 0
+        RestoreMetadata.setFileUUID(uuid, for: url)
     }
 
     static func getFileUUID(for url: URL) -> String? {
-        let path = url.path
-
-        // First, get the size of the attribute
-        let size = getxattr(path, fileIdentifierKey, nil, 0, 0, 0)
-        guard size > 0 else { return nil }
-
-        // Allocate buffer with extra space for null terminator
-        var buffer = [CChar](repeating: 0, count: size + 1)
-        let result = getxattr(path, fileIdentifierKey, &buffer, size, 0, 0)
-        guard result > 0 else { return nil }
-
-        // Ensure null termination
-        buffer[size] = 0
-
-        return String(cString: buffer)
+        RestoreMetadata.getFileUUID(for: url)
     }
 
     // MARK: - File Tree Processing
@@ -82,132 +68,35 @@ class RestoreManager {
     }
 
     private static func createFileSnapshot(fileURL: URL, rootPath: String) throws -> FileSnapshot? {
-        let resourceValues = try fileURL.resourceValues(forKeys: [
-            .isDirectoryKey, .fileSizeKey, .creationDateKey, .contentModificationDateKey
-        ])
-
-        // Only process files, not directories
-        guard let isDirectory = resourceValues.isDirectory, !isDirectory else { return nil }
-
-        // Ensure file has UUID
-        guard let uuid = ensureFileHasUUID(fileURL) else { return nil }
-
-        // Calculate relative path
-        let relativePath = calculateRelativePath(fileURL: fileURL, rootPath: rootPath)
-
+        guard let tuple = try RestoreMetadata.createFileSnapshot(fileURL: fileURL, rootPath: rootPath) else { return nil }
         return FileSnapshot(
-            uuid: uuid,
-            originalPath: relativePath,
-            fileName: fileURL.lastPathComponent,
-            fileSize: Int64(resourceValues.fileSize ?? 0),
-            creationDate: resourceValues.creationDate ?? Date(),
-            modificationDate: resourceValues.contentModificationDate ?? Date()
+            uuid: tuple.uuid,
+            originalPath: tuple.originalPath,
+            fileName: tuple.fileName,
+            fileSize: tuple.fileSize,
+            creationDate: tuple.creationDate,
+            modificationDate: tuple.modificationDate
         )
-    }
-
-    private static func ensureFileHasUUID(_ fileURL: URL) -> String? {
-        if let existingUUID = getFileUUID(for: fileURL) {
-            return existingUUID
-        }
-
-        let newUUID = UUID().uuidString
-        let success = setFileUUID(newUUID, for: fileURL)
-        if !success {
-            print("⚠️ Failed to set UUID for \(fileURL.path)")
-            return nil
-        }
-        return newUUID
-    }
-
-    private static func calculateRelativePath(fileURL: URL, rootPath: String) -> String {
-        let fullPath = fileURL.path
-        return String(fullPath.dropFirst(rootPath.count + 1))
     }
 
     // MARK: - Homogeneous File Snapshot (identical to restore format)
 
     static func createHomogeneousSnapshot(at rootURL: URL, snapshots: [FileSnapshot]) -> Bool {
-        let homogeneousURL = rootURL.appendingPathComponent(".restore-homogeneous.md")
-
-        var content = """
-        # FileSorter Homogeneous Snapshot
-
-        Created: \(Date().formatted())
-        Root Path: \(rootURL.path)
-        Total Files: \(snapshots.count)
-
-        ## File Mapping (UUID -> Original Path)
-
-        """
-
-        for snapshot in snapshots.sorted(by: { $0.originalPath < $1.originalPath }) {
-            content += """
-            ### \(snapshot.fileName)
-            - **UUID**: `\(snapshot.uuid)`
-            - **Path**: `\(snapshot.originalPath)`
-            - **Size**: \(snapshot.fileSize) bytes
-            - **Created**: \(snapshot.creationDate.formatted())
-            - **Modified**: \(snapshot.modificationDate.formatted())
-
-            """
+        let tuples = snapshots.map { snapshot in
+            (uuid: snapshot.uuid, originalPath: snapshot.originalPath, fileName: snapshot.fileName, 
+             fileSize: snapshot.fileSize, creationDate: snapshot.creationDate, modificationDate: snapshot.modificationDate)
         }
-
-        do {
-            try content.write(to: homogeneousURL, atomically: true, encoding: .utf8)
-            lockFile(at: homogeneousURL)
-            print("📸 Created homogeneous snapshot with \(snapshots.count) files")
-            return true
-        } catch {
-            print("⚠️ Failed to create homogeneous snapshot: \(error)")
-            return false
-        }
+        return RestoreFileWriter.createHomogeneousSnapshot(at: rootURL, snapshots: tuples)
     }
 
     // MARK: - Restore File Generation
 
     static func createRestoreFile(at rootURL: URL, snapshots: [FileSnapshot], useApplicationSupport: Bool = true) -> Bool {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyyMMdd-HHmmss"
-        let timestamp = formatter.string(from: Date())
-
-        let restoreURL: URL
-        if useApplicationSupport {
-            // Save to Application Support with mirrored directory structure
-            restoreURL = createApplicationSupportPath(for: rootURL, timestamp: timestamp)
-        } else {
-            // Original behavior - save in folder
-            let restoreFileName = ".restore-\(timestamp).md"
-            restoreURL = rootURL.appendingPathComponent(restoreFileName)
+        let tuples = snapshots.map { snapshot in
+            (uuid: snapshot.uuid, originalPath: snapshot.originalPath, fileName: snapshot.fileName,
+             fileSize: snapshot.fileSize, creationDate: snapshot.creationDate, modificationDate: snapshot.modificationDate) 
         }
-
-        // Create minimal TSV format - just the essentials
-        var content = """
-        # FileOrganizer Restore Metadata
-        # Created: \(Date().formatted())
-        # Root: \(rootURL.path)
-        # Files: \(snapshots.count)
-        # Format: UUID<tab>OriginalPath<tab>Size
-
-        """
-
-        for snapshot in snapshots.sorted(by: { $0.originalPath < $1.originalPath }) {
-            content += "\(snapshot.uuid)\t\(snapshot.originalPath)\t\(snapshot.fileSize)\n"
-        }
-
-        do {
-            // Ensure parent directory exists
-            try FileManager.default.createDirectory(at: restoreURL.deletingLastPathComponent(),
-                                                   withIntermediateDirectories: true)
-
-            try content.write(to: restoreURL, atomically: true, encoding: .utf8)
-            lockFile(at: restoreURL)
-
-            print("📸 Restore file created: \(restoreURL.path)")
-            return true
-        } catch {
-            print("⚠️ Failed to create restore file: \(error)")
-            return false
-        }
+        return RestoreFileWriter.createRestoreFile(at: rootURL, snapshots: tuples, useApplicationSupport: useApplicationSupport)
     }
 
     // MARK: - Application Support Integration
@@ -429,102 +318,17 @@ class RestoreManager {
     // MARK: - Restore Helper Functions
 
     private static func parseRestoreFile(content: String) -> [FileSnapshot] {
-        var snapshots: [FileSnapshot] = []
-        let lines = content.components(separatedBy: .newlines)
-
-        // Detect format: TSV (new) or Markdown (legacy)
-        let isTSVFormat = content.contains("Format: UUID<tab>OriginalPath")
-
-        if isTSVFormat {
-            // Parse minimal TSV format
-            for line in lines {
-                let trimmed = line.trimmingCharacters(in: .whitespaces)
-
-                // Skip comments and empty lines
-                if trimmed.hasPrefix("#") || trimmed.isEmpty {
-                    continue
-                }
-
-                let parts = trimmed.components(separatedBy: "\t")
-                if parts.count >= 3 {
-                    let uuid = parts[0]
-                    let originalPath = parts[1]
-                    let fileSize = Int64(parts[2]) ?? 0
-
-                    // Extract filename from path
-                    let fileName = (originalPath as NSString).lastPathComponent
-
-                    // Use current time as placeholder for dates (not critical for restoration)
-                    let currentDate = Date()
-
-                    snapshots.append(FileSnapshot(
-                        uuid: uuid,
-                        originalPath: originalPath,
-                        fileName: fileName,
-                        fileSize: fileSize,
-                        creationDate: currentDate,
-                        modificationDate: currentDate
-                    ))
-                }
-            }
-        } else {
-            // Parse legacy Markdown format
-            var currentFileName: String?
-            var currentUUID: String?
-            var currentPath: String?
-            var currentSize: Int64 = 0
-            let currentCreationDate = Date()
-            let currentModificationDate = Date()
-
-            for line in lines {
-                let trimmed = line.trimmingCharacters(in: .whitespaces)
-
-                if trimmed.hasPrefix("### ") {
-                    // Save previous entry if complete
-                    if let fileName = currentFileName, let uuid = currentUUID, let path = currentPath {
-                        snapshots.append(FileSnapshot(
-                            uuid: uuid,
-                            originalPath: path,
-                            fileName: fileName,
-                            fileSize: currentSize,
-                            creationDate: currentCreationDate,
-                            modificationDate: currentModificationDate
-                        ))
-                    }
-
-                    // Start new entry
-                    currentFileName = String(trimmed.dropFirst(4))
-                    currentUUID = nil
-                    currentPath = nil
-                    currentSize = 0
-                } else if trimmed.hasPrefix("- **UUID**: `") && trimmed.hasSuffix("`") {
-                    let start = trimmed.index(trimmed.startIndex, offsetBy: 13)
-                    let end = trimmed.index(trimmed.endIndex, offsetBy: -1)
-                    currentUUID = String(trimmed[start..<end])
-                } else if trimmed.hasPrefix("- **Path**: `") && trimmed.hasSuffix("`") {
-                    let start = trimmed.index(trimmed.startIndex, offsetBy: 13)
-                    let end = trimmed.index(trimmed.endIndex, offsetBy: -1)
-                    currentPath = String(trimmed[start..<end])
-                } else if trimmed.hasPrefix("- **Size**: ") && trimmed.contains(" bytes") {
-                    let sizeString = trimmed.replacingOccurrences(of: "- **Size**: ", with: "").replacingOccurrences(of: " bytes", with: "")
-                    currentSize = Int64(sizeString) ?? 0
-                }
-            }
-
-            // Don't forget the last entry
-            if let fileName = currentFileName, let uuid = currentUUID, let path = currentPath {
-                snapshots.append(FileSnapshot(
-                    uuid: uuid,
-                    originalPath: path,
-                    fileName: fileName,
-                    fileSize: currentSize,
-                    creationDate: currentCreationDate,
-                    modificationDate: currentModificationDate
-                ))
-            }
+        let tuples = RestoreFileParser.parseRestoreFile(content: content)
+        return tuples.map { tuple in
+            FileSnapshot(
+                uuid: tuple.uuid,
+                originalPath: tuple.originalPath,
+                fileName: tuple.fileName,
+                fileSize: tuple.fileSize,
+                creationDate: tuple.creationDate,
+                modificationDate: tuple.modificationDate
+            )
         }
-
-        return snapshots
     }
 
     private static func collectAllFilesRecursively(from root: URL) -> [URL] {

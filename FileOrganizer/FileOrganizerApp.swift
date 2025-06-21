@@ -15,7 +15,7 @@ import Observation
 @available(macOS 26.0, *)
 @main
 struct FileOrganizerApp: App {
-    @StateObject private var appState = AppState()
+    @State private var appState = AppState()
     @StateObject private var foundationModelsManager = FoundationModelsManager()
 
     var body: some Scene {
@@ -28,7 +28,7 @@ struct FileOrganizerApp: App {
 
         Settings {
             SettingsView()
-                .environmentObject(appState)
+                .environment(appState)
                 .environmentObject(foundationModelsManager)
         }
     }
@@ -36,7 +36,7 @@ struct FileOrganizerApp: App {
     @ViewBuilder private var rootView: some View {
         if foundationModelsManager.isAvailable {
             ContentView()
-                .environmentObject(appState)
+                .environment(appState)
                 .environmentObject(foundationModelsManager)
                 .environment(\.testFixtureFolder,
                              ProcessInfo.processInfo.environment["FIXTURE_PATH"])
@@ -45,7 +45,7 @@ struct FileOrganizerApp: App {
                 }
         } else {
             presentDemoScreen()
-                .environmentObject(appState)
+                .environment(appState)
                 .environmentObject(foundationModelsManager)
                 .task {
                     await foundationModelsManager.initialize()
@@ -61,21 +61,3 @@ struct FileOrganizerApp: App {
     }
 }
 
-@available(macOS 26.0, *)
-@MainActor
-@Observable
-class AppState: ObservableObject {
-    var selectedDirectory: URL?
-    var isProcessing = false
-    var processingProgress: Double = 0.0
-    var processingStatus = ""
-    var lastOrganizationResult: OrganizationResult?
-    var organizationHistory: [OrganizationResult] = []
-
-    func addToHistory(_ result: OrganizationResult) {
-        organizationHistory.insert(result, at: 0)
-        if organizationHistory.count > 50 {
-            organizationHistory.removeLast()
-        }
-    }
-}

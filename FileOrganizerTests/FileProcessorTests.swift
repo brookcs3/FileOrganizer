@@ -61,55 +61,41 @@ struct FileProcessorTests {
         let foundationManager = FoundationModelsManager()
         _ = FileProcessor(foundationModelsManager: foundationManager)
 
-        let sourceDir = URL(fileURLWithPath: TestConstants.testSourceDir)
-
-        // Create test files with analysis results
-        let file1 = FileItem(
-            url: sourceDir.appendingPathComponent("doc1.pdf"),
-            name: "doc1.pdf",
-            type: "PDF",
-            size: 1024,
-            modificationDate: Date()
-        )
-
-        let file2 = FileItem(
-            url: sourceDir.appendingPathComponent("img1.jpg"),
-            name: "img1.jpg",
-            type: "Image",
-            size: 2048,
-            modificationDate: Date()
-        )
-
-        var mutableFile1 = file1
-        var mutableFile2 = file2
-
-        mutableFile1.analysisResult = FileAnalysisResult(
-            category: "Documents",
-            subcategory: "PDFs",
-            suggestedName: "doc1.pdf",
-            description: "A document",
-            tags: ["document"],
-            confidence: 0.9
-        )
-
-        mutableFile2.analysisResult = FileAnalysisResult(
-            category: "Images",
-            subcategory: nil,
-            suggestedName: "img1.jpg",
-            description: "An image",
-            tags: ["image"],
-            confidence: 0.8
-        )
-
-        let files = [mutableFile1, mutableFile2]
+        let files = createTestFilesWithAnalysis()
 
         // Test organization plan creation logic
-        // Note: In real implementation, make createOrganizationPlan internal for testing
         #expect(files.count == 2)
         #expect(files[0].analysisResult?.category == "Documents")
         #expect(files[1].analysisResult?.category == "Images")
         #expect(files[0].analysisResult?.displayCategory == "Documents/PDFs")
         #expect(files[1].analysisResult?.displayCategory == "Images")
+    }
+    
+    private func createTestFilesWithAnalysis() -> [FileItem] {
+        let sourceDir = URL(fileURLWithPath: TestConstants.testSourceDir)
+        
+        var file1 = createTestFileItem(name: "doc1.pdf", type: "PDF", size: 1024, in: sourceDir)
+        var file2 = createTestFileItem(name: "img1.jpg", type: "Image", size: 2048, in: sourceDir)
+        
+        file1.analysisResult = createTestAnalysisResult(category: "Documents", subcategory: "PDFs", name: "doc1.pdf")
+        file2.analysisResult = createTestAnalysisResult(category: "Images", subcategory: nil, name: "img1.jpg")
+        
+        return [file1, file2]
+    }
+    
+    private func createTestFileItem(name: String, type: String, size: Int64, in directory: URL) -> FileItem {
+        FileItem(url: directory.appendingPathComponent(name), name: name, type: type, size: size, modificationDate: Date())
+    }
+    
+    private func createTestAnalysisResult(category: String, subcategory: String?, name: String) -> FileAnalysisResult {
+        FileAnalysisResult(
+            category: category,
+            subcategory: subcategory,
+            suggestedName: name,
+            description: "Test file",
+            tags: ["test"],
+            confidence: 0.9
+        )
     }
 
     @Test @MainActor func testFileContentExtractionLogic() {

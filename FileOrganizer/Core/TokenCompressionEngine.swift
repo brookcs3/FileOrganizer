@@ -5,6 +5,7 @@
 //  Created by Cameron Brooks on 6/18/25
 //
 
+// MARK: - Token Compression Engine
 struct TokenCompressionEngine {
     private var dictionary: [Substring: Int] = [:]
     private let limit = 256 // Ø of QiuYannn legend
