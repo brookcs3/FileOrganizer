@@ -2,7 +2,7 @@ name: Summarize and Suggest Features
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   summarize-and-suggest:
@@ -14,16 +14,43 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
       - name: Run AI inference with Codestral
         id: inference
-        uses: actions/ai-inference@v1
-        with:
-          model:  mistral/codestral
-          api_base: https://codestral.mistral.ai/v1/
-          api_key: ${{ secrets.CODESTRAL_API_KEY }}
-          prompt: |
-            Summarize the current state and key functionalities of the code in this repository clearly and concisely.
-            Then, suggest exciting, competitive, or sought-after features that could enhance this project.
+        env:
+          CODESTRAL_API_KEY: ${{ secrets.CODESTRAL_API_KEY }}
+        run: |
+          pip install requests
+          python - <<EOF
+          import os
+          import requests
+
+          api_key = os.getenv('CODESTRAL_API_KEY')
+          headers = {
+              'Authorization': f'Bearer {api_key}',
+              'Content-Type': 'application/json'
+          }
+          data = {
+              'prompt': '''
+              Summarize the current state and key functionalities of the code in this repository clearly and concisely.
+              Then, suggest exciting, competitive, or sought-after features that could enhance this project.
+              '''
+          }
+          response = requests.post('https://codestral.mistral.ai/v1/', headers=headers, json=data)
+
+          if response.status_code == 200:
+              print("AI Summary and Feature Suggestions:")
+              print(response.json())
+              # Set the response as an output variable
+              print(f"::set-output name=response::{response.text}")
+          else:
+              print("Failed to generate summary and suggestions")
+              print(response.text)
+          EOF
 
       - name: Output AI summary and feature suggestions
         run: |
