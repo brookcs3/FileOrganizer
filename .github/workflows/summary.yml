@@ -19,39 +19,25 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Run AI inference with Codestral
+      - name: Run AI inference with GitHub Copilot
         id: inference
         env:
-          CODESTRAL_API_KEY: ${{ secrets.CODESTRAL_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pip install requests
           python - <<EOF
           import os
           import requests
 
-          api_key = os.getenv('CODESTRAL_API_KEY')
           headers = {
-              'Authorization': f'Bearer {api_key}',
+              'Authorization': f'Bearer {os.getenv("GITHUB_TOKEN")}',
               'Content-Type': 'application/json'
           }
           data = {
-              'prompt': '''
-              Summarize the current state and key functionalities of the code in this repository clearly and concisely.
-              Then, suggest exciting, competitive, or sought-after features that could enhance this project.
-              '''
+              'model': 'github/copilot',
+              'prompt': 'Summarize the current state and key functionalities of the code in this repository clearly and concisely. Then, suggest exciting, competitive, or sought-after features that could enhance this project.'
           }
 
-          try:
-              response = requests.post('https://codestral.mistral.ai/v1/chat/completions', headers=headers, json=data)
-              response.raise_for_status()  # Raises an HTTPError for bad responses
-              print("AI Summary and Feature Suggestions:")
-              print(response.json())
-              print(f"::set-output name=response::{response.text}")
-          except requests.exceptions.RequestException as e:
-              print(f"Failed to generate summary and suggestions: {e}")
-              print(response.text if response else "No response")
+          response = requests.post('https://models.github.ai/inference', headers=headers, json=data)
+          print(response.json())
           EOF
-
-      - name: Output AI summary and feature suggestions
-        run: |
-          echo "${{ steps.inference.outputs.response }}"
