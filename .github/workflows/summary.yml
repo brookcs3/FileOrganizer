@@ -6,14 +6,16 @@ on:
 
 permissions:
   contents: write
-  models: read
+  checks: write
+  models: write
 
 jobs:
   ai-enhanced-workflow:
     runs-on: macos-latest
     permissions:
       contents: write
-      models: read
+      checks: write
+      models: write
 
     steps:
       - name: Checkout repository
