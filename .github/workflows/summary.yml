@@ -40,16 +40,16 @@ jobs:
               Then, suggest exciting, competitive, or sought-after features that could enhance this project.
               '''
           }
-          response = requests.post('https://codestral.mistral.ai/v1/chat/completions', headers=headers, json=data)
 
-          if response.status_code == 200:
+          try:
+              response = requests.post('https://codestral.mistral.ai/v1/chat/completions', headers=headers, json=data)
+              response.raise_for_status()  # Raises an HTTPError for bad responses
               print("AI Summary and Feature Suggestions:")
               print(response.json())
-              # Set the response as an output variable
               print(f"::set-output name=response::{response.text}")
-          else:
-              print("Failed to generate summary and suggestions")
-              print(response.text)
+          except requests.exceptions.RequestException as e:
+              print(f"Failed to generate summary and suggestions: {e}")
+              print(response.text if response else "No response")
           EOF
 
       - name: Output AI summary and feature suggestions
