@@ -18,12 +18,11 @@ jobs:
         id: inference
         uses: actions/ai-inference@v1
         with:
-          model: codestral
-          api_base: https://codestral.mistral.ai/v1/chat/completions
-          api_key: ${{ secrets.CODESTRAL_API_KEY }}
+          model: mistral/codestral
           prompt: |
             Summarize the current state and key functionalities of the code in this repository clearly and concisely.
             Then, suggest exciting, competitive, or sought-after features that could enhance this project.
+          token: ${{ secrets.CODESTRAL_API_KEY }}
 
       - name: Output AI summary and feature suggestions
         run: |
