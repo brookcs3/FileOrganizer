@@ -15,12 +15,12 @@ import Combine
 import FoundationModels          // ← add this line
 import OSLog
 import Observation
-import Playgrounds
 
 @available(macOS 26.0, *)
 @MainActor
 @Observable
 class FileProcessor {
+    
     var isProcessing = false
     var progress: Double = 0.0
     var currentStatus = ""
@@ -34,7 +34,6 @@ class FileProcessor {
     
     // MARK: - Main Processing Functions
     func processDirectory(_ directoryURL: URL) async throws -> OrganizationResult {
-
         // ── Security-scoped URL bookkeeping ───────────────────────────────
         guard let bookmarkData = UserDefaults.standard.data(forKey: "selectedFolderBookmark") else {
             throw NSError(domain: "FileOrganizerError", code: 1,
@@ -56,53 +55,98 @@ class FileProcessor {
         isProcessing  = true
         progress      = 0
         currentStatus = "Scanning directory..."
-        defer { isProcessing = false }
 
-        // ── 1. Discover files (token-safe) ───────────────────────────────
+        // ── 1. Discover files ───────────────────────────────
         let fileItems = try await discoverFiles(in: directoryURL)
+
         currentStatus = "Found \(fileItems.count) files"
-        progress      = 0.1
+        progress = 0.1
 
-        // ── 2. Analyse each file ────────────────────────────────────────
-        var processedFiles: [FileItem] = []
+        // ── 2. Analyse each file ───────────────────────────────
+        var processedFiles: [FileItem?] = Array(repeating: nil, count: fileItems.count)
         let total = fileItems.count
+        var completedCount = 0
 
-        for (idx, file) in fileItems.enumerated() {
-            currentStatus = "Analyzing \(file.name)..."
-            var updated = file
+        await withTaskGroup(of: (Int, FileItem).self) { group in
+            var inFlight = 0
+            var fileIterator = fileItems.enumerated().makeIterator()
 
-            foundationModelsManager.resetSession()
-            updated.analysisResult = try await analyzeFileWithAI(file)
-
-            if let meta = updated.analysisResult {
-                do {
-                    try await DirectorySummarySession.shared.add(
-                        FileMetadata(
-                            primaryCategory : meta.category,
-                            secondaryCategory: meta.subcategory,
-                            suggestedFilename: meta.suggestedName,
-                            summary         : meta.description,
-                            tags            : meta.tags,
-                            confidence      : meta.confidence
-                        )
+            // Fill the group up to 3 concurrent tasks
+            while inFlight < 3, let (index, file) = fileIterator.next() {
+                group.addTask {
+                    var mutableFile = file
+                    // Create a new independent AI session for this task
+                    let aiSession = await self.foundationModelsManager.makeNewSession() // <-- per-task
+                    mutableFile.analysisResult = try? await aiSession.analyzeFileContent(
+                        try await self.extractFileContent(mutableFile),
+                        fileName: mutableFile.name,
+                        fileType: mutableFile.type
                     )
-                } catch {
-                    print("Summary update failed for \(file.name): \(error)")
+                    if let meta = mutableFile.analysisResult {
+                        do {
+                            try await DirectorySummarySession.shared.add(FileMetadata(
+                                primaryCategory   : meta.category,
+                                secondaryCategory : meta.subcategory,
+                                suggestedFilename : meta.suggestedName,
+                                summary           : meta.description,
+                                tags              : meta.tags,
+                                confidence        : meta.confidence
+                            ))
+                        } catch {
+                            print("Summary update failed for \(file.name): \(error)")
+                        }
+                    }
+                    // Simulate pacing
+                    try? await Task.sleep(nanoseconds: 10_000_000)
+                    return (index, mutableFile)
                 }
+                inFlight += 1
             }
 
-            processedFiles.append(updated)
-            progress = 0.1 + 0.7 * Double(idx + 1) / Double(total)
-            
-            // Small delay to prevent overwhelming the system
-            try await Task.sleep(nanoseconds: 10_000_000)
+            for await (index, resultFile) in group {
+                processedFiles[index] = resultFile
+                completedCount += 1
+                progress = 0.1 + 0.7 * Double(completedCount) / Double(total)
+
+                // Always keep up to 3 tasks in flight
+                if let (nextIndex, nextFile) = fileIterator.next() {
+                    group.addTask {
+                        var mutableFile = nextFile
+                        // Create a new independent AI session for this task
+                        let aiSession = await self.foundationModelsManager.makeNewSession() // <-- per-task session creation
+                        mutableFile.analysisResult = try? await aiSession.analyzeFileContent(
+                            try await self.extractFileContent(mutableFile),
+                            fileName: mutableFile.name,
+                            fileType: mutableFile.type
+                        )
+                        if let meta = mutableFile.analysisResult {
+                            do {
+                                try await DirectorySummarySession.shared.add(FileMetadata(
+                                    primaryCategory   : meta.category,
+                                    secondaryCategory : meta.subcategory,
+                                    suggestedFilename : meta.suggestedName,
+                                    summary           : meta.description,
+                                    tags              : meta.tags,
+                                    confidence        : meta.confidence
+                                ))
+                            } catch {
+                                print("Summary update failed for \(nextFile.name): \(error)")
+                            }
+                        }
+                        try? await Task.sleep(nanoseconds: 10_000_000)
+                        return (nextIndex, mutableFile)
+                    }
+                }
+            }
         }
+        // Remove optionals after all tasks complete
+        let processedFilesNonNil = processedFiles.compactMap { $0 }
 
         // ── 3. Create & execute organization plan ───────────────────────
         currentStatus = "Creating organization plan..."
         progress      = 0.8
 
-        let plan = createOrganizationPlan(files: processedFiles,
+        let plan = createOrganizationPlan(files: processedFilesNonNil,
                                           sourceDirectory: directoryURL)
 
         currentStatus = "Executing organization..."
@@ -134,7 +178,6 @@ class FileProcessor {
             duration          : Date().timeIntervalSince(startTime)
         )
     }
-
     
     // MARK: - File Discovery (QiuYannnn approach)
     
@@ -181,8 +224,19 @@ class FileProcessor {
         }
     }
     
+    /// Quickly scans the given directory and returns the count of each file type.
+    private func countFileTypes(in directoryURL: URL) async throws -> [String: Int] {
+        let files = try await discoverFiles(in: directoryURL)
+        var typeCounts: [String: Int] = [:]
+        for file in files {
+            typeCounts[file.type, default: 0] += 1
+        }
+        return typeCounts
+    }
+    
     // MARK: - AI Analysis (Token-Safe)
     
+    // This method is no longer used directly in the task; analysis now happens inside the task with a per-task session.
     private func analyzeFileWithAI(_ fileItem: FileItem) async throws -> FileAnalysisResult {
         // Extract content based on file type
         let content = try await extractFileContent(fileItem)
@@ -196,7 +250,7 @@ class FileProcessor {
     }
     
     private func extractFileContent(_ fileItem: FileItem) async throws -> String {
-        let fileType = fileItem.fileExtension
+        let fileType = fileItem.fileExtension.lowercased()
         
         // Limit content extraction to respect token limits
         switch fileType {
@@ -206,16 +260,33 @@ class FileProcessor {
             return try extractPDFContent(from: fileItem.url, maxLength: 566)
         case "docx", "doc":
             return try extractDocumentContent(from: fileItem.url, maxLength: 566)
+        case "wav", "aiff", "flac", "ogg", "mp3", "m4a":
+            // Special handling for audio/sound library files
+            let nameLower = fileItem.name.lowercased()
+            var tags: [String] = []
+            if nameLower.hasPrefix("m_") { tags.guess("Male") } // maybe m_ means male?
+            if nameLower.hasPrefix("f_") { tags.guess("Female") } /// maybe f_ means female?
+            if nameLower.contains("R121") { tags.guess("ROyer 121") } //Maybe model number?
+            if nameLower.contains("U47") { tags.guess("TelefunkenU47") }
+            let isLikelySoundEffect = !tags.isEmpty
+            let description: String
+            if isLikelySoundEffect {
+                description = "Audio (potential sound librayr): " + tags.joined(separator: ", ") + ", " + fileItem.name
+            } else {
+                description = "Audio file (potential music track): \(fileItem.name)"
+            }
+            return String(description.prefix(566))
         case "jpg", "jpeg", "png", "gif", "bmp", "tiff", "heic":
             return "Image file: \(fileItem.name)"
         default:
-            return "File: \(fileItem.name), Type: \(fileType), Size: \(fileItem.displaySize)"
+            let summary = "File: \(fileItem.name), Type: \(fileType), Size: \(fileItem.displaySize)"
+            return String(summary.prefix(566))
         }
     }
     
     private func extractTextContent(from url: URL, maxLength: Int) throws -> String {
         let content = try String(contentsOf: url, encoding: .utf8)
-        return String(content.prefix(maxLength))
+        return String(content.prefix(700))
     }
     
     private func extractPDFContent(from url: URL, maxLength: Int) throws -> String {
@@ -315,5 +386,11 @@ class FileProcessor {
         
         return (filesOrganized: filesOrganized ?? 0, categoriesCreated: Array(categoriesCreated))
     }
-}
+}   
 
+extension Array where Element == String {
+    /// Appends a value, but expresses 'guessing' intent.
+    mutating func guess(_ value: String) {
+        self.append(value)
+    }
+}

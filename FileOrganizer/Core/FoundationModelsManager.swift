@@ -44,13 +44,13 @@ class FoundationModelsManager: ObservableObject {
     var session: LanguageModelSession?
 
     // Pool used when analyzing multiple files in parallel
-    private var sessionPool: SessionPool<LanguageModelSession>?
+    var sessionPool: SessionPool<LanguageModelSession>?
 
     private let instructionsText = """
         You are a file organization assistant that analyzes file content and provides categorization metadata.
         """
 
-    private let maxTokens = 4096 // Apple LLM token limit
+    private let maxTokens = 700 // Apple LLM token limit
     
     func initialize() async {
         let systemModel = SystemLanguageModel.default
@@ -100,6 +100,8 @@ class FoundationModelsManager: ObservableObject {
                             fileName: String,
                             fileType: String) async throws -> FileAnalysisResult {
         
+        defer { self.resetSession() }
+        
         guard let session else { throw FoundationModelsError.sessionNotAvailable }
         
         let safeContent = String(content.prefix(3_000))
@@ -122,19 +124,19 @@ class FoundationModelsManager: ObservableObject {
             options: opts
             )
         
-        let meta = response.content
+        let meta = response.content 
         // Convert to your existing FileAnalysisResult
         return FileAnalysisResult(
             category      : meta.primaryCategory,
             subcategory   : meta.secondaryCategory,
             suggestedName : meta.suggestedFilename,
-            description   : meta.summary ?? "",
+            description   : meta.summary.map { String($0.prefix(3_000)) } ?? "",
             tags          : meta.tags,
             confidence    : meta.confidence
         )
     }
     
-    
+
     enum FoundationModelsError: Error {
         case sessionNotAvailable
         case analysisTimeout
@@ -151,5 +153,42 @@ class FoundationModelsManager: ObservableObject {
             }
         }
     }
+    
+    public func makeNewSession() -> LanguageModelSession {
+        return LanguageModelSession(instructions: instructionsText)
+    }
 }
 
+@available(macOS 26.0, *)
+extension LanguageModelSession {
+    func analyzeFileContent(_ content: String, fileName: String, fileType: String) async throws -> FileAnalysisResult {
+        let safeContent = String(content.prefix(3_000))
+        let prompt = """
+            Analyze this file and generate organization metadata.\n\n
+            
+            Filename: \(fileName)\n
+            Type: \(fileType)\n
+            Content (may be truncated): \(safeContent)
+            """
+        
+        let temperature = 0.2
+        let opts = GenerationOptions(temperature: temperature)
+        
+        let response = try await self.respond(
+            to: prompt,
+            generating: FileMetadata.self,
+            includeSchemaInPrompt: false,
+            options: opts
+        )
+        
+        let meta = response.content
+        return FileAnalysisResult(
+            category      : meta.primaryCategory,
+            subcategory   : meta.secondaryCategory,
+            suggestedName : meta.suggestedFilename,
+            description   : meta.summary.map { String($0.prefix(3_000)) } ?? "",
+            tags          : meta.tags,
+            confidence    : meta.confidence
+        )
+    }
+}

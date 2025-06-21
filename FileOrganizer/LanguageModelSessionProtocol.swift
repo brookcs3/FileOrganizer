@@ -49,12 +49,18 @@ extension LanguageModelSession: LanguageModelSessionProtocol {
     }
 }
 
-// MARK: - Equality for SystemLanguageModel.UseCase
-
+// Strong Equatable for enums with associated values:
 extension SystemLanguageModel.UseCase: Equatable {
-    public static func == (lhs: SystemLanguageModel.UseCase, rhs: SystemLanguageModel.UseCase) -> Bool {
-        // If UseCase is an enum without associated values, synthesized; if not, update this accordingly.
-        return String(describing: lhs) == String(describing: rhs)
+    public static func ==(lhs: SystemLanguageModel.UseCase, rhs: SystemLanguageModel.UseCase) -> Bool {
+        switch (lhs, rhs) {
+        // Replace the following template with your real cases:
+        // case (.chat, .chat):
+        //     return true
+        // case let (.summarization(a), .summarization(b)):
+        //     return a == b
+        // Add all actual cases below
+        default:
+            return false
+        }
     }
 }
-// Replace with a more precise implementation if UseCase has associated values.

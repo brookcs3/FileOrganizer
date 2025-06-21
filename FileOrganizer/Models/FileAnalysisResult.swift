@@ -43,7 +43,7 @@ struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable, Send
     let timestamp: Date
     let sourceDirectory: String
     let targetDirectory: String
-    let mode: String
+    let mode: String?
     let filesProcessed: Int
     let filesOrganized: Int
     let categoriesCreated: [String]
