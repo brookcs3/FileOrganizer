@@ -7,6 +7,10 @@
 
 import Foundation
 
+private enum RestoreConstants {
+    static let restoreFileName = ".restore.md"
+}
+
 class RestoreManager {
     private static let fileIdentifierKey = "com.filesorter.uuid"
     
@@ -49,66 +53,75 @@ class RestoreManager {
     
     static func tagAllFilesInTree(rootURL: URL) -> [FileSnapshot] {
         var snapshots: [FileSnapshot] = []
-        let fileManager = FileManager.default
         
-        func processDirectory(_ url: URL, relativePath: String = "") {
-            guard let enumerator = fileManager.enumerator(at: url, includingPropertiesForKeys: [
-                .isDirectoryKey,
-                .fileSizeKey,
-                .creationDateKey,
-                .contentModificationDateKey
-            ]) else { return }
+        processDirectory(rootURL, rootPath: rootURL.path, snapshots: &snapshots)
+        return snapshots
+    }
+    
+    private static func processDirectory(_ url: URL, rootPath: String, snapshots: inout [FileSnapshot]) {
+        let fileManager = FileManager.default
+        guard let enumerator = fileManager.enumerator(at: url, includingPropertiesForKeys: [
+            .isDirectoryKey, .fileSizeKey, .creationDateKey, .contentModificationDateKey
+        ]) else { return }
+        
+        for case let fileURL as URL in enumerator {
+            if shouldSkipFile(fileURL) { continue }
             
-            for case let fileURL as URL in enumerator {
-                // Skip .restore.md files
-                if fileURL.lastPathComponent == ".restore.md" { continue }
-                
-                do {
-                    let resourceValues = try fileURL.resourceValues(forKeys: [
-                        .isDirectoryKey,
-                        .fileSizeKey,
-                        .creationDateKey,
-                        .contentModificationDateKey
-                    ])
-                    
-                    // Only process files, not directories
-                    guard let isDirectory = resourceValues.isDirectory, !isDirectory else { continue }
-                    
-                    // Generate UUID if file doesn't have one
-                    var uuid = getFileUUID(for: fileURL)
-                    if uuid == nil {
-                        uuid = UUID().uuidString
-                        let success = setFileUUID(uuid!, for: fileURL)
-                        if !success {
-                            print("⚠️ Failed to set UUID for \(fileURL.path)")
-                            continue
-                        }
-                    }
-                    
-                    // Calculate relative path from root
-                    let fullPath = fileURL.path
-                    let rootPath = rootURL.path
-                    let relativePath = String(fullPath.dropFirst(rootPath.count + 1))
-                    
-                    let snapshot = FileSnapshot(
-                        uuid: uuid!,
-                        originalPath: relativePath,
-                        fileName: fileURL.lastPathComponent,
-                        fileSize: Int64(resourceValues.fileSize ?? 0),
-                        creationDate: resourceValues.creationDate ?? Date(),
-                        modificationDate: resourceValues.contentModificationDate ?? Date()
-                    )
-                    
+            do {
+                if let snapshot = try createFileSnapshot(fileURL: fileURL, rootPath: rootPath) {
                     snapshots.append(snapshot)
-                    
-                } catch {
-                    print("⚠️ Error processing \(fileURL.path): \(error)")
                 }
+            } catch {
+                print("⚠️ Error processing \(fileURL.path): \(error)")
             }
         }
+    }
+    
+    private static func shouldSkipFile(_ fileURL: URL) -> Bool {
+        return fileURL.lastPathComponent == RestoreConstants.restoreFileName
+    }
+    
+    private static func createFileSnapshot(fileURL: URL, rootPath: String) throws -> FileSnapshot? {
+        let resourceValues = try fileURL.resourceValues(forKeys: [
+            .isDirectoryKey, .fileSizeKey, .creationDateKey, .contentModificationDateKey
+        ])
         
-        processDirectory(rootURL)
-        return snapshots
+        // Only process files, not directories
+        guard let isDirectory = resourceValues.isDirectory, !isDirectory else { return nil }
+        
+        // Ensure file has UUID
+        guard let uuid = ensureFileHasUUID(fileURL) else { return nil }
+        
+        // Calculate relative path
+        let relativePath = calculateRelativePath(fileURL: fileURL, rootPath: rootPath)
+        
+        return FileSnapshot(
+            uuid: uuid,
+            originalPath: relativePath,
+            fileName: fileURL.lastPathComponent,
+            fileSize: Int64(resourceValues.fileSize ?? 0),
+            creationDate: resourceValues.creationDate ?? Date(),
+            modificationDate: resourceValues.contentModificationDate ?? Date()
+        )
+    }
+    
+    private static func ensureFileHasUUID(_ fileURL: URL) -> String? {
+        if let existingUUID = getFileUUID(for: fileURL) {
+            return existingUUID
+        }
+        
+        let newUUID = UUID().uuidString
+        let success = setFileUUID(newUUID, for: fileURL)
+        if !success {
+            print("⚠️ Failed to set UUID for \(fileURL.path)")
+            return nil
+        }
+        return newUUID
+    }
+    
+    private static func calculateRelativePath(fileURL: URL, rootPath: String) -> String {
+        let fullPath = fileURL.path
+        return String(fullPath.dropFirst(rootPath.count + 1))
     }
     
     // MARK: - Homogeneous File Snapshot (identical to restore format)
@@ -310,7 +323,7 @@ class RestoreManager {
                     restoreFiles.append((url: file, timestamp: timestampPart))
                 }
                 // Also check for legacy .restore.md files
-                else if fileName == ".restore.md" {
+                else if fileName == RestoreConstants.restoreFileName {
                     restoreFiles.append((url: file, timestamp: "legacy"))
                 }
             }
@@ -328,76 +341,91 @@ class RestoreManager {
     // MARK: - Restore Process
     
     static func restoreFromSnapshot(at rootURL: URL, restoreFileURL: URL? = nil) -> Bool {
-        let restoreFiles = findRestoreFiles(for: rootURL)
-        
-        guard !restoreFiles.isEmpty else {
-            print("⚠️ No restore files found for \(rootURL.path)")
+        guard let restoreURL = selectRestoreFile(rootURL: rootURL, restoreFileURL: restoreFileURL) else {
             return false
         }
         
-        // Use specified restore file or default to newest
-        let restoreURL = restoreFileURL ?? restoreFiles.first!.url
-        
-        print("🔄 Using restore file: \(restoreURL.lastPathComponent)")
-        
         do {
-            // Parse the restore file to get UUID -> path mappings
-            let restoreContent = try String(contentsOf: restoreURL, encoding: .utf8)
-            let snapshots = parseRestoreFile(content: restoreContent)
-            
-            print("🔄 Found \(snapshots.count) files to restore")
-            
-            // Find all current files and match them by UUID
-            let allCurrentFiles = collectAllFilesRecursively(from: rootURL)
-            var restoredCount = 0
-            var errorCount = 0
-            
-            for snapshot in snapshots {
-                // Find the current file with this UUID
-                guard let currentFile = findFileByUUID(snapshot.uuid, in: allCurrentFiles) else {
-                    print("⚠️ Could not find file with UUID \(snapshot.uuid) (original: \(snapshot.originalPath))")
-                    errorCount += 1
-                    continue
-                }
-                
-                // Calculate the target path
-                let targetURL = rootURL.appendingPathComponent(snapshot.originalPath)
-                
-                // Skip if already in correct location
-                if currentFile == targetURL {
-                    continue
-                }
-                
-                // Create intermediate directories if needed
-                let targetDirectory = targetURL.deletingLastPathComponent()
-                try FileManager.default.createDirectory(at: targetDirectory, withIntermediateDirectories: true, attributes: nil)
-                
-                // Move the file back
-                do {
-                    // Remove target if it exists
-                    if FileManager.default.fileExists(atPath: targetURL.path) {
-                        try FileManager.default.removeItem(at: targetURL)
-                    }
-                    
-                    try FileManager.default.moveItem(at: currentFile, to: targetURL)
-                    print("✅ Restored: \(snapshot.originalPath)")
-                    restoredCount += 1
-                    
-                } catch {
-                    print("⚠️ Failed to restore \(snapshot.originalPath): \(error)")
-                    errorCount += 1
-                }
-            }
-            
-            // Clean up empty directories created during sorting
+            let snapshots = try loadSnapshots(from: restoreURL)
+            let result = restoreFiles(snapshots: snapshots, rootURL: rootURL)
             cleanupEmptyDirectories(at: rootURL)
             
-            print("🎉 Restore complete: \(restoredCount) files restored, \(errorCount) errors")
-            return errorCount == 0
+            print("🎉 Restore complete: \(result.restoredCount) files restored, \(result.errorCount) errors")
+            return result.errorCount == 0
             
         } catch {
             print("⚠️ Failed to restore from snapshot: \(error)")
             return false
+        }
+    }
+    
+    private static func selectRestoreFile(rootURL: URL, restoreFileURL: URL?) -> URL? {
+        let restoreFiles = findRestoreFiles(for: rootURL)
+        
+        guard !restoreFiles.isEmpty else {
+            print("⚠️ No restore files found for \(rootURL.path)")
+            return nil
+        }
+        
+        let restoreURL = restoreFileURL ?? restoreFiles.first!.url
+        print("🔄 Using restore file: \(restoreURL.lastPathComponent)")
+        return restoreURL
+    }
+    
+    private static func loadSnapshots(from restoreURL: URL) throws -> [FileSnapshot] {
+        let restoreContent = try String(contentsOf: restoreURL, encoding: .utf8)
+        let snapshots = parseRestoreFile(content: restoreContent)
+        print("🔄 Found \(snapshots.count) files to restore")
+        return snapshots
+    }
+    
+    private static func restoreFiles(snapshots: [FileSnapshot], rootURL: URL) -> (restoredCount: Int, errorCount: Int) {
+        let allCurrentFiles = collectAllFilesRecursively(from: rootURL)
+        var restoredCount = 0
+        var errorCount = 0
+        
+        for snapshot in snapshots {
+            let result = restoreSingleFile(snapshot: snapshot, rootURL: rootURL, allCurrentFiles: allCurrentFiles)
+            restoredCount += result.success ? 1 : 0
+            errorCount += result.success ? 0 : 1
+        }
+        
+        return (restoredCount, errorCount)
+    }
+    
+    private static func restoreSingleFile(snapshot: FileSnapshot, rootURL: URL, allCurrentFiles: [URL]) -> (success: Bool) {
+        // Find the current file with this UUID
+        guard let currentFile = findFileByUUID(snapshot.uuid, in: allCurrentFiles) else {
+            print("⚠️ Could not find file with UUID \(snapshot.uuid) (original: \(snapshot.originalPath))")
+            return (success: false)
+        }
+        
+        let targetURL = rootURL.appendingPathComponent(snapshot.originalPath)
+        
+        // Skip if already in correct location
+        if currentFile == targetURL { return (success: true) }
+        
+        return moveFileToTarget(currentFile: currentFile, targetURL: targetURL, originalPath: snapshot.originalPath)
+    }
+    
+    private static func moveFileToTarget(currentFile: URL, targetURL: URL, originalPath: String) -> (success: Bool) {
+        do {
+            // Create intermediate directories if needed
+            let targetDirectory = targetURL.deletingLastPathComponent()
+            try FileManager.default.createDirectory(at: targetDirectory, withIntermediateDirectories: true, attributes: nil)
+            
+            // Remove target if it exists
+            if FileManager.default.fileExists(atPath: targetURL.path) {
+                try FileManager.default.removeItem(at: targetURL)
+            }
+            
+            try FileManager.default.moveItem(at: currentFile, to: targetURL)
+            print("✅ Restored: \(originalPath)")
+            return (success: true)
+            
+        } catch {
+            print("⚠️ Failed to restore \(originalPath): \(error)")
+            return (success: false)
         }
     }
     
