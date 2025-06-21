@@ -12,7 +12,7 @@ struct OrganizeFilesIntent: AppIntent {
     var directory: URL
 
     func perform() async throws -> some IntentResult {
-        let manager  = FoundationModelsManager()
+        let manager = FoundationModelsManager()
         await manager.initialize()
         let processor = FileProcessor(foundationModelsManager: manager)
         let result = try await processor.processDirectory(directory)
@@ -74,6 +74,6 @@ struct ViewInAppIntent: AppIntent {
     nonisolated static let title: LocalizedStringResource = "Open App"
 
     func perform() async throws -> some IntentResult {
-        return .result()
+        .result()
     }
 }

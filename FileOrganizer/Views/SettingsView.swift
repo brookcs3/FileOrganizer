@@ -138,7 +138,6 @@ struct SettingsView: View {
     private func saveSettings() {
         do {
             try metadataStore.saveSettings(settings)
-
         } catch {
             print("Failed to save settings: \(error)")
         }

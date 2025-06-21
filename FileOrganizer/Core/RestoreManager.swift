@@ -78,7 +78,7 @@ class RestoreManager {
     }
 
     private static func shouldSkipFile(_ fileURL: URL) -> Bool {
-        return fileURL.lastPathComponent == RestoreConstants.restoreFileName
+        fileURL.lastPathComponent == RestoreConstants.restoreFileName
     }
 
     private static func createFileSnapshot(fileURL: URL, rootPath: String) throws -> FileSnapshot? {
@@ -330,7 +330,6 @@ class RestoreManager {
 
             // Sort by timestamp (newest first)
             restoreFiles.sort { $0.timestamp > $1.timestamp }
-
         } catch {
             print("⚠️ Error finding restore files: \(error)")
         }
@@ -352,7 +351,6 @@ class RestoreManager {
 
             print("🎉 Restore complete: \(result.restoredCount) files restored, \(result.errorCount) errors")
             return result.errorCount == 0
-
         } catch {
             print("⚠️ Failed to restore from snapshot: \(error)")
             return false
@@ -422,7 +420,6 @@ class RestoreManager {
             try FileManager.default.moveItem(at: currentFile, to: targetURL)
             print("✅ Restored: \(originalPath)")
             return true
-
         } catch {
             print("⚠️ Failed to restore \(originalPath): \(error)")
             return false
@@ -500,17 +497,14 @@ class RestoreManager {
                     currentUUID = nil
                     currentPath = nil
                     currentSize = 0
-
                 } else if trimmed.hasPrefix("- **UUID**: `") && trimmed.hasSuffix("`") {
                     let start = trimmed.index(trimmed.startIndex, offsetBy: 13)
                     let end = trimmed.index(trimmed.endIndex, offsetBy: -1)
                     currentUUID = String(trimmed[start..<end])
-
                 } else if trimmed.hasPrefix("- **Path**: `") && trimmed.hasSuffix("`") {
                     let start = trimmed.index(trimmed.startIndex, offsetBy: 13)
                     let end = trimmed.index(trimmed.endIndex, offsetBy: -1)
                     currentPath = String(trimmed[start..<end])
-
                 } else if trimmed.hasPrefix("- **Size**: ") && trimmed.contains(" bytes") {
                     let sizeString = trimmed.replacingOccurrences(of: "- **Size**: ", with: "").replacingOccurrences(of: " bytes", with: "")
                     currentSize = Int64(sizeString) ?? 0

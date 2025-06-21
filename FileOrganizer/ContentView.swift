@@ -278,7 +278,6 @@ struct ContentView: View {
                     }
                     .padding(24)
                     .liquidGlassBackground()
-
                 } else {
                     // Ready State
                     VStack(spacing: 16) {
@@ -383,8 +382,7 @@ struct ContentView: View {
         openPanel.message = "Select a folder to organize"
 
         if openPanel.runModal() == .OK,
-            let selectedURL = openPanel.url
-        {
+            let selectedURL = openPanel.url {
             createBookmarkAndSelectDirectory(selectedURL)
         }
     }

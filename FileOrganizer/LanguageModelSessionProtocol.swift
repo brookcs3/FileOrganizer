@@ -18,7 +18,6 @@ protocol LanguageModelSessionProtocol: AnyObject, Sendable {
 
 // Extend Apple’s type so it conforms automatically.
 extension LanguageModelSession: LanguageModelSessionProtocol {
-
     /// Clears the transcript so the next request starts fresh.
     /// (Until Apple's public API adds `resetContext()`, we cheat by sending an
     /// empty system-only exchange that the runtime treats as a new thread.)
@@ -36,7 +35,6 @@ extension LanguageModelSession: LanguageModelSessionProtocol {
         from prompt: String,
         instructions: Instructions
     ) async throws -> T {
-
         let opts = GenerationOptions()
 
         let result = try await self.respond(

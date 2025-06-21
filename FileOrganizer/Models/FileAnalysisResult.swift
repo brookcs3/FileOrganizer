@@ -61,7 +61,7 @@ struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable, Send
     }
 
     var summary: String {
-        return "Organized \(filesOrganized)/\(filesProcessed) files into \(categoriesCreated.count) categories"
+        "Organized \(filesOrganized)/\(filesProcessed) files into \(categoriesCreated.count) categories"
     }
 }
 
@@ -89,7 +89,7 @@ struct OrganizationPlan {
     let operations: [FileOperation]
 
     var summary: String {
-        let categories = Set(operations.map { $0.targetCategory }).count
+        let categories = Set(operations.map(\.targetCategory)).count
         return "Plan: Move \(operations.count) files into \(categories) categories"
     }
 }

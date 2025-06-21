@@ -19,7 +19,6 @@ private enum TestConstants {
 }
 
 struct FileProcessorTests {
-
     @Test @MainActor func testFileProcessorInitialization() {
         let foundationManager = FoundationModelsManager()
         let processor = FileProcessor(foundationModelsManager: foundationManager)

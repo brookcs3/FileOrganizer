@@ -10,7 +10,6 @@ import FoundationModels
 
 @available(macOS 26.0, *)
 actor DirectorySummarySession {
-
     // Singleton – one actor for the whole app
     static let shared = DirectorySummarySession()
 

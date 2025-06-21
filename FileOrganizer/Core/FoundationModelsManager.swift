@@ -66,7 +66,6 @@ class FoundationModelsManager: ObservableObject {
             self.session = newSession
 
             self.sessionPool = SessionPool<LanguageModelSession>(maxParallel: 3) { @Sendable [instructionsText] in
-
                 LanguageModelSession(instructions: instructionsText)
             }
 
@@ -86,7 +85,6 @@ class FoundationModelsManager: ObservableObject {
             self.isAvailable = false
             self.availabilityStatus = "Model unavailable: \(other)"
         }
-
     }
 
     /// Resets the Foundation Models session, ensuring a fresh context for each file.
@@ -99,7 +97,6 @@ class FoundationModelsManager: ObservableObject {
     func analyzeFileContent(_ content: String,
                             fileName: String,
                             fileType: String) async throws -> FileAnalysisResult {
-
         defer { self.resetSession() }
 
         guard let session else { throw FoundationModelsError.sessionNotAvailable }
@@ -154,7 +151,7 @@ class FoundationModelsManager: ObservableObject {
     }
 
     public func makeNewSession() -> LanguageModelSession {
-        return LanguageModelSession(instructions: instructionsText)
+        LanguageModelSession(instructions: instructionsText)
     }
 }
 

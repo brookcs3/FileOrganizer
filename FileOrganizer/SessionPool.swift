@@ -11,7 +11,7 @@ actor SessionPool<T: LanguageModelSessionProtocol> {
     private let makeSession: () -> T
     private let maxParallel: Int
     private var idle: [T] = []
-    private var inUse: Set<ObjectIdentifier>          = []
+    private var inUse: Set<ObjectIdentifier> = []
 
     init(maxParallel: Int = 3,
          factory: @escaping () -> T) {

@@ -20,7 +20,6 @@ import Observation
 @MainActor
 @Observable
 class FileProcessor {
-
     var isProcessing = false
     var progress: Double = 0.0
     var currentStatus = ""
@@ -140,7 +139,7 @@ class FileProcessor {
             }
         }
         // Remove optionals after all tasks complete
-        let processedFilesNonNil = processedFiles.compactMap { $0 }
+        let processedFilesNonNil = processedFiles.compactMap(\.self)
 
         // ── 3. Create & execute organization plan ───────────────────────
         currentStatus = "Creating organization plan..."
@@ -182,7 +181,7 @@ class FileProcessor {
     // MARK: - File Discovery (QiuYannnn approach)
 
     private func discoverFiles(in directoryURL: URL) async throws -> [FileItem] {
-        return try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 do {
                     let resourceKeys: [URLResourceKey] = [
@@ -291,12 +290,12 @@ class FileProcessor {
 
     private func extractPDFContent(from url: URL, maxLength: Int) throws -> String {
         // Basic PDF content extraction - in a real app, use PDFKit
-        return "PDF document: \(url.lastPathComponent)"
+        "PDF document: \(url.lastPathComponent)"
     }
 
     private func extractDocumentContent(from url: URL, maxLength: Int) throws -> String {
         // Basic document content extraction - in a real app, use proper document parsing
-        return "Document: \(url.lastPathComponent)"
+        "Document: \(url.lastPathComponent)"
     }
 
     // MARK: - Organization Planning

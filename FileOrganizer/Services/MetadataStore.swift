@@ -140,5 +140,4 @@ class MetadataStore: ObservableObject {
             Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
         }.reduce(Int64(0), +)
     }
-
 }

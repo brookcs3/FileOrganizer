@@ -30,7 +30,6 @@ struct HistoryView: View {
                             .foregroundColor(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-
                 } else {
                     // History List
                     List(appState.organizationHistory, selection: $selectedResult) { result in

@@ -28,7 +28,6 @@ private enum TestConstants {
 // MARK: - Model Tests
 
 struct FileAnalysisResultTests {
-
     @Test @MainActor func testFileAnalysisResultInitialization() {
         let result = FileAnalysisResult(
             category: TestConstants.documentsCategory,
@@ -97,7 +96,6 @@ struct FileAnalysisResultTests {
 }
 
 struct OrganizationResultTests {
-
     @Test @MainActor func testOrganizationResultInitialization() {
         let result = OrganizationResult(
             sourceDirectory: TestConstants.testSourcePath,
@@ -159,7 +157,6 @@ struct OrganizationResultTests {
 }
 
 struct AppSettingsTests {
-
     @Test @MainActor func testAppSettingsDefaults() {
         let settings = AppSettings()
 
@@ -190,7 +187,6 @@ struct AppSettingsTests {
 }
 
 struct SortingModeTests {
-
     @Test @MainActor func testSortingModeConstants() {
         #expect(SortingMode.name == "AI Intelligent")
         #expect(SortingMode.humanReadableDescription.contains("Apple Intelligence"))

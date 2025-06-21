@@ -1,0 +1,213 @@
+# SwiftLint Configuration for FileOrganizer
+# Enterprise-grade code quality rules with architectural constraints
+
+# Rules to include
+included:
+  - FileOrganizer/
+  - FileOrganizerTests/
+  - FileOrganizerUITests/
+
+# Files to exclude
+excluded:
+  - Pods/
+  - .build/
+  - FileOrganizer.xcodeproj/
+  - DerivedData/
+  - FileOrganizer-c6cb951aa38c5067164871cdd07b4a4a9e70e0bd/
+
+# Disabled rules (can be enabled later)
+disabled_rules:
+  - trailing_whitespace # Handled by Xcode
+  - todo # We use FUTURE instead
+  - force_unwrapping # DEBUG code uses force unwrapping safely
+  - file_header # Too restrictive for existing codebase
+
+# Opt-in rules for enterprise quality
+opt_in_rules:
+  - array_init
+  - attributes
+  - closure_end_indentation
+  - closure_spacing
+  - collection_alignment
+  - contains_over_filter_count
+  - contains_over_filter_is_empty
+  - contains_over_first_not_nil
+  - empty_collection_literal
+  - empty_count
+  - empty_string
+  - enum_case_associated_values_count
+  - explicit_init
+  - fallthrough
+  - fatal_error_message
+  - file_header
+  - first_where
+  - force_unwrapping
+  - implicit_return
+  - joined_default_parameter
+  - last_where
+  - legacy_random
+  - literal_expression_end_indentation
+  - modifier_order
+  - multiline_arguments
+  - multiline_function_chains
+  - multiline_literal_brackets
+  - multiline_parameters
+  - multiline_parameters_brackets
+  - operator_usage_whitespace
+  - overridden_super_call
+  - pattern_matching_keywords
+  - prefer_key_path
+  - prefer_self_type_over_type_of_self
+  - redundant_nil_coalescing
+  - redundant_type_annotation
+  - single_test_class
+  - sorted_first_last
+  - static_operator
+  - strong_iboutlet
+  - toggle_bool
+  - trailing_closure
+  - unavailable_function
+  - unneeded_parentheses_in_closure_argument
+  - vertical_parameter_alignment_on_call
+  - vertical_whitespace_closing_braces
+  - vertical_whitespace_opening_braces
+  - yoda_condition
+
+# Custom architectural rules
+custom_rules:
+  # Enforce MARK comments for organization
+  missing_mark_comment:
+    name: "Missing MARK Comment"
+    regex: '^(class|struct|enum|extension|protocol)\s+\w+'
+    message: "Types should be preceded by a MARK comment for organization"
+    severity: warning
+    
+  # Ensure proper file organization
+  file_organization:
+    name: "File Organization"
+    regex: 'import\s+\w+\n(?!import|\n|//)'
+    message: "Imports should be grouped together at the top"
+    severity: warning
+    
+  # Enforce CoreData @MainActor usage
+  main_actor_coredata:
+    name: "CoreData MainActor"
+    regex: '@NSManaged|NSManagedObject'
+    message: "CoreData classes should use @MainActor for thread safety"
+    severity: error
+    
+  # Prevent hardcoded strings for user-facing text
+  hardcoded_user_strings:
+    name: "Hardcoded User Strings"
+    regex: 'Text\("(?!^$)[^"]*"\)'
+    message: "Use localized strings for user-facing text"
+    severity: warning
+    
+  # Enforce proper error handling
+  force_try_usage:
+    name: "Force Try Usage"
+    regex: 'try!\s+'
+    message: "Use proper error handling instead of force try"
+    severity: error
+    
+  # Architectural constraint: Views should not contain business logic
+  view_business_logic:
+    name: "View Business Logic"
+    regex: '(struct|class)\s+\w*View.*\{[\s\S]*?(FileManager|URLSession|CoreData)'
+    message: "Views should not contain business logic - extract to ViewModel or Service"
+    severity: warning
+    
+  # Ensure proper Swift 6 concurrency usage
+  unsafe_sendable:
+    name: "Unsafe Sendable"
+    regex: '@unchecked\s+Sendable'
+    message: "Avoid @unchecked Sendable - use proper concurrency patterns"
+    severity: warning
+
+# Rule configurations
+cyclomatic_complexity:
+  warning: 10
+  error: 15
+
+file_length:
+  warning: 400
+  error: 500
+
+function_body_length:
+  warning: 40
+  error: 60
+
+function_parameter_count:
+  warning: 5
+  error: 8
+
+identifier_name:
+  min_length:
+    warning: 2
+    error: 1
+  max_length:
+    warning: 40
+    error: 50
+  excluded:
+    - id
+    - url
+    - ai
+    - ui
+
+line_length:
+  warning: 120
+  error: 140
+  ignores_urls: true
+  ignores_function_declarations: true
+  ignores_comments: true
+
+nesting:
+  type_level:
+    warning: 2
+    error: 3
+
+type_body_length:
+  warning: 300
+  error: 400
+
+type_name:
+  min_length:
+    warning: 3
+    error: 2
+  max_length:
+    warning: 40
+    error: 50
+
+# Force unwrapping configuration
+force_unwrapping:
+  severity: error
+
+# Force cast configuration  
+force_cast:
+  severity: error
+
+# Large tuple configuration
+large_tuple:
+  warning: 3
+  error: 4
+
+# Multiple closures with trailing closure
+multiple_closures_with_trailing_closure:
+  severity: warning
+
+# Prefer KeyPath over closure
+prefer_key_path:
+  severity: warning
+
+# Reporter configuration
+reporter: "xcode"
+
+# File header configuration
+file_header:
+  required_pattern: |
+                    \/\/
+                    \/\/  .*\.swift
+                    \/\/  FileOrganizer.*
+                    \/\/
+                    \/\/  Created by .* on \d{1,2}\/\d{1,2}\/\d{2}\.
+                    \/\/
