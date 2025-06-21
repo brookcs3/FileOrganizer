@@ -14,10 +14,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run AI inference
+      - name: Run AI inference with Mistral
         id: inference
         uses: actions/ai-inference@v1
         with:
+          model: mistral-tiny
+          api_base: https://api.mistral.ai/v1
+          api_key: ${{ secrets.MISTRAL_API_KEY }}
           prompt: |
             Summarize the current state and key functionalities of the code in this repository clearly and concisely. Then, suggest exciting, competitive, or sought-after features that could enhance this project.
 
