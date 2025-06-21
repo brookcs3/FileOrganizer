@@ -9,21 +9,33 @@ import Testing
 import Foundation
 @testable import FileOrganizer
 
+// MARK: - Test Constants
+
+private enum TestConstants {
+    static let documentsCategory = "Documents"
+    static let pdfSubcategory = "PDFs" 
+    static let imagesCategory = "Images"
+    static let testPdfName = "test.pdf"
+    static let testSourcePath = "/path/to/source"
+    static let testTargetPath = "/path/to/target"
+    static let aiIntelligentMode = "AI Intelligent"
+}
+
 // MARK: - Model Tests
 
 struct FileAnalysisResultTests {
     
     @Test @MainActor func testFileAnalysisResultInitialization() {
         let result = FileAnalysisResult(
-            category: "Documents",
-            subcategory: "PDFs",
-            suggestedName: "test.pdf",
+            category: TestConstants.documentsCategory,
+            subcategory: TestConstants.pdfSubcategory,
+            suggestedName: TestConstants.testPdfName,
             description: "A test PDF document",
             tags: ["document", "pdf"],
             confidence: 0.95
         )
         
-        #expect(result.category == "Documents")
+        #expect(result.category == TestConstants.documentsCategory)
         #expect(result.subcategory == "PDFs")
         #expect(result.suggestedName == "test.pdf")
         #expect(result.description == "A test PDF document")
@@ -34,28 +46,28 @@ struct FileAnalysisResultTests {
     
     @Test @MainActor func testDisplayCategoryWithSubcategory() {
         let result = FileAnalysisResult(
-            category: "Documents",
-            subcategory: "PDFs",
-            suggestedName: "test.pdf",
+            category: TestConstants.documentsCategory,
+            subcategory: TestConstants.pdfSubcategory,
+            suggestedName: TestConstants.testPdfName,
             description: "A test PDF document",
             tags: [],
             confidence: 0.9
         )
         
-        #expect(result.displayCategory == "Documents/PDFs")
+        #expect(result.displayCategory == "\(TestConstants.documentsCategory)/\(TestConstants.pdfSubcategory)")
     }
     
     @Test @MainActor func testDisplayCategoryWithoutSubcategory() {
         let result = FileAnalysisResult(
-            category: "Documents",
+            category: TestConstants.documentsCategory,
             subcategory: nil,
-            suggestedName: "test.pdf",
+            suggestedName: TestConstants.testPdfName,
             description: "A test PDF document",
             tags: [],
             confidence: 0.9
         )
         
-        #expect(result.displayCategory == "Documents")
+        #expect(result.displayCategory == TestConstants.documentsCategory)
     }
     
     @Test @MainActor func testFileAnalysisResultCodable() throws {
