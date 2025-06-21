@@ -96,9 +96,9 @@ struct OrganizationResultTests {
     
     @Test @MainActor func testOrganizationResultInitialization() {
         let result = OrganizationResult(
-            sourceDirectory: "/path/to/source",
-            targetDirectory: "/path/to/target",
-            mode: "AI Intelligent",
+            sourceDirectory: TestConstants.testSourcePath,
+            targetDirectory: TestConstants.testTargetPath,
+            mode: TestConstants.aiIntelligentMode,
             filesProcessed: 10,
             filesOrganized: 8,
             categoriesCreated: ["Documents", "Images"],
@@ -118,9 +118,9 @@ struct OrganizationResultTests {
     
     @Test @MainActor func testOrganizationResultSummary() {
         let result = OrganizationResult(
-            sourceDirectory: "/path/to/source",
-            targetDirectory: "/path/to/target",
-            mode: "AI Intelligent",
+            sourceDirectory: TestConstants.testSourcePath,
+            targetDirectory: TestConstants.testTargetPath,
+            mode: TestConstants.aiIntelligentMode,
             filesProcessed: 15,
             filesOrganized: 12,
             categoriesCreated: ["Documents", "Images", "Videos"],
@@ -132,9 +132,9 @@ struct OrganizationResultTests {
     
     @Test @MainActor func testOrganizationResultCodable() throws {
         let original = OrganizationResult(
-            sourceDirectory: "/path/to/source",
-            targetDirectory: "/path/to/target",
-            mode: "AI Intelligent",
+            sourceDirectory: TestConstants.testSourcePath,
+            targetDirectory: TestConstants.testTargetPath,
+            mode: TestConstants.aiIntelligentMode,
             filesProcessed: 5,
             filesOrganized: 4,
             categoriesCreated: ["Documents"],
