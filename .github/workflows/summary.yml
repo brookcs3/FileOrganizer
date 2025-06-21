@@ -40,7 +40,7 @@ jobs:
               Then, suggest exciting, competitive, or sought-after features that could enhance this project.
               '''
           }
-          response = requests.post('https://codestral.mistral.ai/v1/', headers=headers, json=data)
+          response = requests.post('https://codestral.mistral.ai/v1/chat/completions', headers=headers, json=data)
 
           if response.status_code == 200:
               print("AI Summary and Feature Suggestions:")
