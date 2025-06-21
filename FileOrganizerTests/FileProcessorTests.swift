@@ -9,13 +9,22 @@ import Testing
 import Foundation
 @testable import FileOrganizer
 
+// MARK: - Test Constants
+
+private enum TestConstants {
+    static let testSourceDir = "/test/source"
+    static let testPdfPath = "/test/doc.pdf"
+    static let testImagePath = "/test/image.jpg"
+    static let testTextPath = "/test/readme.txt"
+}
+
 struct FileProcessorTests {
 
     @Test @MainActor func testFileProcessorInitialization() {
         let foundationManager = FoundationModelsManager()
         let processor = FileProcessor(foundationModelsManager: foundationManager)
 
-        #expect(!processor.isProcessing)
+        #expect(processor.isProcessing == false)
         #expect(processor.progress == 0.0)
         #expect(processor.currentStatus == "")
         #expect(processor.foundationModelsManager === foundationManager)
@@ -41,7 +50,7 @@ struct FileProcessorTests {
         let processor = FileProcessor(foundationModelsManager: foundationManager)
 
         // Use reflection to access private method for testing
-        let mirror = Mirror(reflecting: processor)
+        _ = Mirror(reflecting: processor)
 
         // Note: This test verifies the file discovery logic exists
         // In a real implementation, you'd make discoverFiles internal for testing
@@ -53,7 +62,7 @@ struct FileProcessorTests {
         let foundationManager = FoundationModelsManager()
         _ = FileProcessor(foundationModelsManager: foundationManager)
 
-        let sourceDir = URL(fileURLWithPath: "/test/source")
+        let sourceDir = URL(fileURLWithPath: TestConstants.testSourceDir)
 
         // Create test files with analysis results
         let file1 = FileItem(
@@ -110,7 +119,7 @@ struct FileProcessorTests {
 
         // Test different file types for content extraction logic
         let pdfFile = FileItem(
-            url: URL(fileURLWithPath: "/test/doc.pdf"),
+            url: URL(fileURLWithPath: TestConstants.testPdfPath),
             name: "doc.pdf",
             type: "PDF",
             size: 5000,
@@ -118,7 +127,7 @@ struct FileProcessorTests {
         )
 
         let imageFile = FileItem(
-            url: URL(fileURLWithPath: "/test/image.jpg"),
+            url: URL(fileURLWithPath: TestConstants.testImagePath),
             name: "image.jpg",
             type: "Image",
             size: 10000,
@@ -126,7 +135,7 @@ struct FileProcessorTests {
         )
 
         let textFile = FileItem(
-            url: URL(fileURLWithPath: "/test/readme.txt"),
+            url: URL(fileURLWithPath: TestConstants.testTextPath),
             name: "readme.txt",
             type: "Text",
             size: 500,
@@ -150,7 +159,7 @@ struct FileProcessorTests {
 
         // Test initial state
         #expect(processor.progress == 0.0)
-        #expect(!processor.isProcessing)
+        #expect(processor.isProcessing == false)
         #expect(processor.currentStatus == "")
 
         // Test progress bounds

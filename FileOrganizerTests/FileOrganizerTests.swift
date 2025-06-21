@@ -19,6 +19,10 @@ private enum TestConstants {
     static let testSourcePath = "/path/to/source"
     static let testTargetPath = "/path/to/target"
     static let aiIntelligentMode = "AI Intelligent"
+    static let testDescription = "A test PDF document"
+    static let screenshotsSubcategory = "Screenshots"
+    static let screenshotName = "screenshot.png"
+    static let screenshotDescription = "A screenshot image"
 }
 
 // MARK: - Model Tests
@@ -36,9 +40,9 @@ struct FileAnalysisResultTests {
         )
 
         #expect(result.category == TestConstants.documentsCategory)
-        #expect(result.subcategory == "PDFs")
-        #expect(result.suggestedName == "test.pdf")
-        #expect(result.description == "A test PDF document")
+        #expect(result.subcategory == TestConstants.pdfSubcategory)
+        #expect(result.suggestedName == TestConstants.testPdfName)
+        #expect(result.description == TestConstants.testDescription)
         #expect(result.tags == ["document", "pdf"])
         #expect(result.confidence == 0.95)
         #expect(result.id != UUID())
@@ -49,7 +53,7 @@ struct FileAnalysisResultTests {
             category: TestConstants.documentsCategory,
             subcategory: TestConstants.pdfSubcategory,
             suggestedName: TestConstants.testPdfName,
-            description: "A test PDF document",
+            description: TestConstants.testDescription,
             tags: [],
             confidence: 0.9
         )
@@ -62,7 +66,7 @@ struct FileAnalysisResultTests {
             category: TestConstants.documentsCategory,
             subcategory: nil,
             suggestedName: TestConstants.testPdfName,
-            description: "A test PDF document",
+            description: TestConstants.testDescription,
             tags: [],
             confidence: 0.9
         )
@@ -72,10 +76,10 @@ struct FileAnalysisResultTests {
 
     @Test @MainActor func testFileAnalysisResultCodable() throws {
         let original = FileAnalysisResult(
-            category: "Images",
-            subcategory: "Screenshots",
-            suggestedName: "screenshot.png",
-            description: "A screenshot image",
+            category: TestConstants.imagesCategory,
+            subcategory: TestConstants.screenshotsSubcategory,
+            suggestedName: TestConstants.screenshotName,
+            description: TestConstants.screenshotDescription,
             tags: ["image", "screenshot"],
             confidence: 0.85
         )
@@ -105,9 +109,9 @@ struct OrganizationResultTests {
             duration: 5.2
         )
 
-        #expect(result.sourceDirectory == "/path/to/source")
-        #expect(result.targetDirectory == "/path/to/target")
-        #expect(result.mode == "AI Intelligent")
+        #expect(result.sourceDirectory == TestConstants.testSourcePath)
+        #expect(result.targetDirectory == TestConstants.testTargetPath)
+        #expect(result.mode == TestConstants.aiIntelligentMode)
         #expect(result.filesProcessed == 10)
         #expect(result.filesOrganized == 8)
         #expect(result.categoriesCreated == ["Documents", "Images"])
@@ -160,7 +164,7 @@ struct AppSettingsTests {
         let settings = AppSettings()
 
         #expect(settings.maxFilesPerBatch == 100)
-        #expect(settings.enableProgressNotifications)
+        #expect(settings.enableProgressNotifications == true)
         #expect(settings.organizationStrategy == .createSubfolders)
     }
 
@@ -180,7 +184,7 @@ struct AppSettingsTests {
         let decoded = try JSONDecoder().decode(AppSettings.self, from: encoded)
 
         #expect(decoded.maxFilesPerBatch == 50)
-        #expect(!decoded.enableProgressNotifications)
+        #expect(decoded.enableProgressNotifications == false)
         #expect(decoded.organizationStrategy == .dateHierarchy)
     }
 }
