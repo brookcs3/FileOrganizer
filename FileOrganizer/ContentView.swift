@@ -69,7 +69,7 @@ struct ContentView: View {
                 .environmentObject(appState)
         }
         .alert("Error", isPresented: $showingAlert) {
-            Button("OK") {}
+            Button("OK") { /* Dismiss alert automatically */ }
         } message: {
             Text(alertMessage)
         }

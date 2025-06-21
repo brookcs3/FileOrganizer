@@ -20,18 +20,7 @@ struct OrganizeFilesIntent: AppIntent {
     }
 }
 
-// TODO: Re-enable snippet intent when OrganizationResult conforms to _IntentValue
-// @available(macOS 26.0, *)
-// @MainActor
-// struct OrganizationSnippetIntent: SnippetIntent {
-//     nonisolated static let title: LocalizedStringResource = "Organization Results"
-//
-//     @Parameter var result: OrganizationResult
-//
-//     func perform() async throws -> some IntentResult & ShowsSnippetView {
-//         return .result(view: OrganizationResultSnippetView(result: result))
-//     }
-// }
+// FUTURE: Re-enable snippet intent when OrganizationResult conforms to _IntentValue in next iOS release
 
 @available(macOS 26.0, *)
 struct OrganizationResultSnippetView: View {

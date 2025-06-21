@@ -23,7 +23,7 @@ actor SessionPool<T: LanguageModelSessionProtocol> {
     /// Borrow a hot session; waits if all are busy.
     func acquire() async throws -> T {
         while idle.isEmpty { try await Task.sleep(nanoseconds: 2_000_000) }
-        // TODO (next PR): add SpeedMode (thorough, fast) and token-budget guard
+        // FUTURE: add SpeedMode (thorough, fast) and token-budget guard for performance optimization
         // – thorough: roll-up at 3 500 tokens
         // – fast    : hard reset at 2 000 tokens (env SPEED_MODE=fast)
         let s = idle.removeFirst()

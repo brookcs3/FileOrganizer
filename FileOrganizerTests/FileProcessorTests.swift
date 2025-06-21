@@ -15,7 +15,7 @@ struct FileProcessorTests {
         let foundationManager = FoundationModelsManager()
         let processor = FileProcessor(foundationModelsManager: foundationManager)
         
-        #expect(processor.isProcessing == false)
+        #expect(!processor.isProcessing)
         #expect(processor.progress == 0.0)
         #expect(processor.currentStatus == "")
         #expect(processor.foundationModelsManager === foundationManager)
@@ -51,7 +51,7 @@ struct FileProcessorTests {
     
     @Test @MainActor func testOrganizationPlanCreation() {
         let foundationManager = FoundationModelsManager()
-        let processor = FileProcessor(foundationModelsManager: foundationManager)
+        _ = FileProcessor(foundationModelsManager: foundationManager)
         
         let sourceDir = URL(fileURLWithPath: "/test/source")
         
@@ -106,7 +106,7 @@ struct FileProcessorTests {
     
     @Test @MainActor func testFileContentExtractionLogic() {
         let foundationManager = FoundationModelsManager()
-        let processor = FileProcessor(foundationModelsManager: foundationManager)
+        _ = FileProcessor(foundationModelsManager: foundationManager)
         
         // Test different file types for content extraction logic
         let pdfFile = FileItem(
@@ -150,7 +150,7 @@ struct FileProcessorTests {
         
         // Test initial state
         #expect(processor.progress == 0.0)
-        #expect(processor.isProcessing == false)
+        #expect(!processor.isProcessing)
         #expect(processor.currentStatus == "")
         
         // Test progress bounds
@@ -161,6 +161,6 @@ struct FileProcessorTests {
         #expect(processor.currentStatus == "Processing files...")
         
         processor.isProcessing = true
-        #expect(processor.isProcessing == true)
+        #expect(processor.isProcessing)
     }
 }

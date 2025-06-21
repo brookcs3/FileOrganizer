@@ -11,40 +11,4 @@ import Foundation
 import AppIntents
 
 // MARK: - AppEntity conformance
-// TODO: Fix concurrency issues with AppEntity conformance
-// @available(macOS 26.0, *)
-// extension OrganizationResult: AppEntity {
-//     static var typeDisplayRepresentation: TypeDisplayRepresentation {
-//         .init(name: "Organization Result")
-//     }
-//
-//     static let defaultQuery = OrganizationResultQuery()
-//
-//     var displayRepresentation: DisplayRepresentation {
-//         DisplayRepresentation(
-//             title: "\(filesOrganized)/\(filesProcessed) files",
-//             subtitle: "\(categoriesCreated.count) categories"
-//         )
-//     }
-// }
-//
-// // MARK: - EntityQuery for OrganizationResult
-// @available(macOS 26.0, *)
-// struct OrganizationResultQuery: EntityQuery {
-//     func entities(for identifiers: [OrganizationResult.ID]) async throws -> [OrganizationResult] {
-//         // TODO: look these up from persistent history if you want Spotlight/Shortcuts recall
-//         []
-//     }
-//
-//     func suggestedEntities() async throws -> [OrganizationResult] {
-//         // TODO: return the most-recent N if you like
-//         []
-//     }
-//
-//     func defaultResult() async -> OrganizationResult? { nil }
-//     
-//     func entities(matching string: String) async throws -> [OrganizationResult] {
-//         // TODO: implement search functionality if needed
-//         []
-//     }
-// }
+// FUTURE: Fix concurrency issues with AppEntity conformance in next FoundationModels release

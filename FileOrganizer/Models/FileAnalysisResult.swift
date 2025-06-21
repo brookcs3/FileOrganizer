@@ -143,6 +143,7 @@ struct SortingMode {
     static let humanReadableDescription = "Uses Apple Intelligence to analyze file content and create semantic categories for organizing"
     static let icon = "brain.head.profile"
 
+    // Private initializer to prevent instantiation of utility struct
     private init() {}
 }
 

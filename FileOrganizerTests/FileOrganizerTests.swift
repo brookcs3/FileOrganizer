@@ -160,7 +160,7 @@ struct AppSettingsTests {
         let settings = AppSettings()
         
         #expect(settings.maxFilesPerBatch == 100)
-        #expect(settings.enableProgressNotifications == true)
+        #expect(settings.enableProgressNotifications)
         #expect(settings.organizationStrategy == .createSubfolders)
     }
     
@@ -180,7 +180,7 @@ struct AppSettingsTests {
         let decoded = try JSONDecoder().decode(AppSettings.self, from: encoded)
         
         #expect(decoded.maxFilesPerBatch == 50)
-        #expect(decoded.enableProgressNotifications == false)
+        #expect(!decoded.enableProgressNotifications)
         #expect(decoded.organizationStrategy == .dateHierarchy)
     }
 }

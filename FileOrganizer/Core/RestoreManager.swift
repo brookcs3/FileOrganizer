@@ -386,29 +386,29 @@ class RestoreManager {
         
         for snapshot in snapshots {
             let result = restoreSingleFile(snapshot: snapshot, rootURL: rootURL, allCurrentFiles: allCurrentFiles)
-            restoredCount += result.success ? 1 : 0
-            errorCount += result.success ? 0 : 1
+            restoredCount += result ? 1 : 0
+            errorCount += result ? 0 : 1
         }
         
         return (restoredCount, errorCount)
     }
     
-    private static func restoreSingleFile(snapshot: FileSnapshot, rootURL: URL, allCurrentFiles: [URL]) -> (success: Bool) {
+    private static func restoreSingleFile(snapshot: FileSnapshot, rootURL: URL, allCurrentFiles: [URL]) -> Bool {
         // Find the current file with this UUID
         guard let currentFile = findFileByUUID(snapshot.uuid, in: allCurrentFiles) else {
             print("⚠️ Could not find file with UUID \(snapshot.uuid) (original: \(snapshot.originalPath))")
-            return (success: false)
+            return false
         }
         
         let targetURL = rootURL.appendingPathComponent(snapshot.originalPath)
         
         // Skip if already in correct location
-        if currentFile == targetURL { return (success: true) }
+        if currentFile == targetURL { return true }
         
         return moveFileToTarget(currentFile: currentFile, targetURL: targetURL, originalPath: snapshot.originalPath)
     }
     
-    private static func moveFileToTarget(currentFile: URL, targetURL: URL, originalPath: String) -> (success: Bool) {
+    private static func moveFileToTarget(currentFile: URL, targetURL: URL, originalPath: String) -> Bool {
         do {
             // Create intermediate directories if needed
             let targetDirectory = targetURL.deletingLastPathComponent()
@@ -421,11 +421,11 @@ class RestoreManager {
             
             try FileManager.default.moveItem(at: currentFile, to: targetURL)
             print("✅ Restored: \(originalPath)")
-            return (success: true)
+            return true
             
         } catch {
             print("⚠️ Failed to restore \(originalPath): \(error)")
-            return (success: false)
+            return false
         }
     }
     
