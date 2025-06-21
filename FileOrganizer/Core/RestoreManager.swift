@@ -546,7 +546,7 @@ class RestoreManager {
                 let resourceValues = try url.resourceValues(forKeys: [.isDirectoryKey])
                 if let isDirectory = resourceValues.isDirectory, !isDirectory {
                     // Skip .restore.md files
-                    if url.lastPathComponent != ".restore.md" {
+                    if url.lastPathComponent != RestoreConstants.restoreFileName {
                         files.append(url)
                     }
                 }
