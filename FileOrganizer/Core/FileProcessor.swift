@@ -33,7 +33,9 @@ class FileProcessor {
 
     // MARK: - Main Processing Functions
     func processDirectory(_ directoryURL: URL) async throws -> OrganizationResult {
-        // ── Security-scoped URL bookkeeping ───────────────────────────────
+        let startTime = Date()
+        
+        // Setup security-scoped resource access
         guard let bookmarkData = UserDefaults.standard.data(forKey: "selectedFolderBookmark") else {
             throw NSError(domain: "FileOrganizerError", code: 1,
                           userInfo: [NSLocalizedDescriptionKey: "No bookmark found"])
@@ -49,129 +51,30 @@ class FileProcessor {
         }
         defer { secureURL.stopAccessingSecurityScopedResource() }
 
-        // ── UI state prep ────────────────────────────────────────────────
-        let startTime = Date()
-        isProcessing  = true
-        progress      = 0
-        currentStatus = "Scanning directory..."
-
-        // ── 1. Discover files ───────────────────────────────
+        // Initialize processing state
+        initializeProcessingState()
+        
+        // Discover and analyze files
         let fileItems = try await discoverFiles(in: directoryURL)
-
-        currentStatus = "Found \(fileItems.count) files"
-        progress = 0.1
-
-        // ── 2. Analyse each file ───────────────────────────────
-        var processedFiles: [FileItem?] = Array(repeating: nil, count: fileItems.count)
-        let total = fileItems.count
-        var completedCount = 0
-
-        await withTaskGroup(of: (Int, FileItem).self) { group in
-            var inFlight = 0
-            var fileIterator = fileItems.enumerated().makeIterator()
-
-            // Fill the group up to 3 concurrent tasks
-            while inFlight < 3, let (index, file) = fileIterator.next() {
-                group.addTask {
-                    var mutableFile = file
-                    // Create a new independent AI session for this task
-                    let aiSession = await self.foundationModelsManager.makeNewSession() // <-- per-task
-                    mutableFile.analysisResult = try? await aiSession.analyzeFileContent(
-                        try await self.extractFileContent(mutableFile),
-                        fileName: mutableFile.name,
-                        fileType: mutableFile.type
-                    )
-                    if let meta = mutableFile.analysisResult {
-                        do {
-                            try await DirectorySummarySession.shared.add(FileMetadata(
-                                primaryCategory: meta.category,
-                                secondaryCategory: meta.subcategory,
-                                suggestedFilename: meta.suggestedName,
-                                summary: meta.description,
-                                tags: meta.tags,
-                                confidence: meta.confidence
-                            ))
-                        } catch {
-                            print("Summary update failed for \(file.name): \(error)")
-                        }
-                    }
-                    // Simulate pacing
-                    try? await Task.sleep(nanoseconds: 10_000_000)
-                    return (index, mutableFile)
-                }
-                inFlight += 1
-            }
-
-            for await (index, resultFile) in group {
-                processedFiles[index] = resultFile
-                completedCount += 1
-                progress = 0.1 + 0.7 * Double(completedCount) / Double(total)
-
-                // Always keep up to 3 tasks in flight
-                if let (nextIndex, nextFile) = fileIterator.next() {
-                    group.addTask {
-                        var mutableFile = nextFile
-                        // Create a new independent AI session for this task
-                        let aiSession = await self.foundationModelsManager.makeNewSession() // <-- per-task session creation
-                        mutableFile.analysisResult = try? await aiSession.analyzeFileContent(
-                            try await self.extractFileContent(mutableFile),
-                            fileName: mutableFile.name,
-                            fileType: mutableFile.type
-                        )
-                        if let meta = mutableFile.analysisResult {
-                            do {
-                                try await DirectorySummarySession.shared.add(FileMetadata(
-                                    primaryCategory: meta.category,
-                                    secondaryCategory: meta.subcategory,
-                                    suggestedFilename: meta.suggestedName,
-                                    summary: meta.description,
-                                    tags: meta.tags,
-                                    confidence: meta.confidence
-                                ))
-                            } catch {
-                                print("Summary update failed for \(nextFile.name): \(error)")
-                            }
-                        }
-                        try? await Task.sleep(nanoseconds: 10_000_000)
-                        return (nextIndex, mutableFile)
-                    }
-                }
-            }
-        }
-        // Remove optionals after all tasks complete
-        let processedFilesNonNil = processedFiles.compactMap(\.self)
-
-        // ── 3. Create & execute organization plan ───────────────────────
-        currentStatus = "Creating organization plan..."
-        progress      = 0.8
-
-        let plan = createOrganizationPlan(files: processedFilesNonNil,
-                                          sourceDirectory: directoryURL)
+        let processedFiles = try await analyzeFilesInParallel(fileItems)
+        
+        // Create and execute organization plan
+        let plan = await createAndExecutePlan(files: processedFiles, sourceDirectory: directoryURL)
 
         currentStatus = "Executing organization..."
-        progress      = 0.9
-
+        progress = 0.9
         let execResult = try await executeOrganization(plan: plan)
-
-        progress      = 1
-        currentStatus = "Complete"
-
-        // —— NEW: directory-level advice ——————————
-        let advice: String
-        do {
-            advice = try await DirectorySummarySession.shared.globalAdvice()
-            Logger().info("Continuity advice: \(advice)")
-        } catch {
-            advice = "No advice (error: \(error.localizedDescription))"
-        }
-        // ————————————————————————————————
-
-        // ── 4. Return summary object ────────────────────────────────────
+        
+        // Generate global advice and finalize
+        _ = await generateGlobalAdvice()
+        finalizeProcessingState()
+        
+        // Return summary object
         return OrganizationResult(
             sourceDirectory: directoryURL.path,
             targetDirectory: plan.targetDirectory.path,
             mode: SortingMode.name,
-            filesProcessed: total,
+            filesProcessed: fileItems.count,
             filesOrganized: execResult.filesOrganized,
             categoriesCreated: execResult.categoriesCreated,
             duration: Date().timeIntervalSince(startTime)
