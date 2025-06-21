@@ -40,6 +40,8 @@ jobs:
           swiftlint_auto_fix: true
           auto_fix: true
           commit: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
       - name: Generate Swift Documentation
         uses: sersoft-gmbh/swifty-docs-action@v3
