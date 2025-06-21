@@ -2,7 +2,6 @@ import Foundation
 import XCTest // for XCTUnwrap
 @testable import FileOrganizer   // <-- this line
 
-
 private class TestHelperClass {}
 
 enum TestHelper {

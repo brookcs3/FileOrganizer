@@ -10,9 +10,9 @@ import FoundationModels   // for LanguageModelSessionProtocol
 actor SessionPool<T: LanguageModelSessionProtocol> {
     private let makeSession: () -> T
     private let maxParallel: Int
-    private var idle:  [T] = []
+    private var idle: [T] = []
     private var inUse: Set<ObjectIdentifier>          = []
-    
+
     init(maxParallel: Int = 3,
          factory: @escaping () -> T) {
         self.maxParallel = maxParallel
@@ -32,11 +32,9 @@ actor SessionPool<T: LanguageModelSessionProtocol> {
         return s
     }
 
-
     /// Return it to the pool.
     func release(_ s: T) {
         inUse.remove(ObjectIdentifier(s))
         idle.append(s)
     }
 }
-

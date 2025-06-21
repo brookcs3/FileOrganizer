@@ -6,7 +6,6 @@
 //
 // Environment+Keys.swift   ← new file
 
-
 import SwiftUI
 
 private struct TestFixtureFolderKey: EnvironmentKey {

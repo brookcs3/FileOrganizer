@@ -15,7 +15,7 @@ import Combine
 import Observation
 
 @Generable
-struct FileMetadata{
+struct FileMetadata {
     @Guide(description: "Primary category name")
     var primaryCategory: String
 
@@ -51,11 +51,11 @@ class FoundationModelsManager: ObservableObject {
         """
 
     private let maxTokens = 700 // Apple LLM token limit
-    
+
     func initialize() async {
         let systemModel = SystemLanguageModel.default
         self.model = systemModel
-        
+
         switch systemModel.availability {
         case .available:
             self.isAvailable = true
@@ -69,79 +69,78 @@ class FoundationModelsManager: ObservableObject {
 
                 LanguageModelSession(instructions: instructionsText)
             }
-            
+
         case .unavailable(.deviceNotEligible):
             self.isAvailable = false
             self.availabilityStatus = "Device not eligible for Foundation Model"
-            
+
         case .unavailable(.appleIntelligenceNotEnabled):
             self.isAvailable = false
             self.availabilityStatus = "Foundation Model not enabled in Settings"
-            
+
         case .unavailable(.modelNotReady):
             self.isAvailable = false
             self.availabilityStatus = "Model downloading or not ready"
-            
+
         case .unavailable(let other):
             self.isAvailable = false
             self.availabilityStatus = "Model unavailable: \(other)"
         }
-        
+
     }
-    
+
     /// Resets the Foundation Models session, ensuring a fresh context for each file.
     func resetSession() {
         guard isAvailable else { return }
         let session = LanguageModelSession(instructions: instructionsText)
         self.session = session
     }
-    
+
     func analyzeFileContent(_ content: String,
                             fileName: String,
                             fileType: String) async throws -> FileAnalysisResult {
-        
+
         defer { self.resetSession() }
-        
+
         guard let session else { throw FoundationModelsError.sessionNotAvailable }
-        
+
         let safeContent = String(content.prefix(3_000))
         let prompt = """
             Analyze this file and generate organization metadata.\n\n
-            
+
             Filename: \(fileName)\n
             Type: \(fileType)\n
             Content (may be truncated): \(safeContent)
             """
-        
+
         let temperature = 0.2
-        
+
         let opts = GenerationOptions(temperature: temperature)
-        
+
         let response = try await session.respond(
             to: prompt,
             generating: FileMetadata.self,
             includeSchemaInPrompt: false,
             options: opts
             )
-        
-        let meta = response.content 
+
+        let meta = response.content
         // Convert to your existing FileAnalysisResult
         return FileAnalysisResult(
-            category      : meta.primaryCategory,
-            subcategory   : meta.secondaryCategory,
-            suggestedName : meta.suggestedFilename,
-            description   : meta.summary.map { String($0.prefix(3_000)) } ?? "",
-            tags          : meta.tags,
-            confidence    : meta.confidence
+            category: meta.primaryCategory,
+            subcategory: meta.secondaryCategory,
+            suggestedName: meta.suggestedFilename,
+            description: meta.summary.map { String($0.prefix(3_000)) } ?? "",
+            tags: meta.tags,
+            confidence: meta.confidence
         )
     }
-    
 
     enum FoundationModelsError: Error {
         case sessionNotAvailable
         case analysisTimeout
         case invalidResponse
-        
+
         var localizedDescription: String {
             switch self {
             case .sessionNotAvailable:
@@ -153,7 +152,7 @@ class FoundationModelsManager: ObservableObject {
             }
         }
     }
-    
+
     public func makeNewSession() -> LanguageModelSession {
         return LanguageModelSession(instructions: instructionsText)
     }
@@ -165,30 +164,30 @@ extension LanguageModelSession {
         let safeContent = String(content.prefix(3_000))
         let prompt = """
             Analyze this file and generate organization metadata.\n\n
-            
+
             Filename: \(fileName)\n
             Type: \(fileType)\n
             Content (may be truncated): \(safeContent)
             """
-        
+
         let temperature = 0.2
         let opts = GenerationOptions(temperature: temperature)
-        
+
         let response = try await self.respond(
             to: prompt,
             generating: FileMetadata.self,
             includeSchemaInPrompt: false,
             options: opts
         )
-        
+
         let meta = response.content
         return FileAnalysisResult(
-            category      : meta.primaryCategory,
-            subcategory   : meta.secondaryCategory,
-            suggestedName : meta.suggestedFilename,
-            description   : meta.summary.map { String($0.prefix(3_000)) } ?? "",
-            tags          : meta.tags,
-            confidence    : meta.confidence
+            category: meta.primaryCategory,
+            subcategory: meta.secondaryCategory,
+            suggestedName: meta.suggestedFilename,
+            description: meta.summary.map { String($0.prefix(3_000)) } ?? "",
+            tags: meta.tags,
+            confidence: meta.confidence
         )
     }
 }

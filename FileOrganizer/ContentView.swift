@@ -33,7 +33,6 @@ struct ContentView: View {
             wrappedValue: FileProcessor(foundationModelsManager: placeholder)
         )
     }
-    
 
     var body: some View {
         NavigationSplitView {
@@ -155,8 +154,7 @@ struct ContentView: View {
                         openPanel.message = "Select a folder to organize"
 
                         if openPanel.runModal() == .OK,
-                            let selectedURL = openPanel.url
-                        {
+                            let selectedURL = openPanel.url {
                             do {
                                 let bookmark = try selectedURL.bookmarkData(
                                     options: .withSecurityScope
@@ -177,8 +175,7 @@ struct ContentView: View {
                 .padding(.horizontal)
 
                 // 🐛 Debug memory export ----------------------------------------
-                Button("🐛 Debug Memory (\(Int(Date().timeIntervalSince1970)))")
-                {
+                Button("🐛 Debug Memory (\(Int(Date().timeIntervalSince1970)))") {
                     Task {
                         let session = DirectorySummarySession.shared
                         let batchSize = 1_500
@@ -366,8 +363,7 @@ struct ContentView: View {
             }
         }
     }
-    
-    
+
     // NOTE: RestoreManager remains in project but dormant for future development
 
     private func showAlert(_ message: String) {
@@ -375,4 +371,3 @@ struct ContentView: View {
         showingAlert = true
     }
 }
-

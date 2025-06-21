@@ -11,7 +11,7 @@ import SwiftUI
 struct HistoryView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedResult: OrganizationResult?
-    
+
     var body: some View {
         NavigationView {
             VStack {
@@ -21,16 +21,16 @@ struct HistoryView: View {
                         Image(systemName: "clock.arrow.circlepath")
                             .font(.system(size: 48))
                             .foregroundColor(.secondary)
-                        
+
                         Text("No Organization History")
                             .font(.title2)
                             .fontWeight(.semibold)
-                        
+
                         Text("Your file organization history will appear here")
                             .foregroundColor(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    
+
                 } else {
                     // History List
                     List(appState.organizationHistory, selection: $selectedResult) { result in
@@ -49,7 +49,7 @@ struct HistoryView: View {
                     .disabled(appState.organizationHistory.isEmpty)
                 }
             }
-            
+
             // Detail View
             if let selectedResult = selectedResult {
                 HistoryDetailView(result: selectedResult)
@@ -58,7 +58,7 @@ struct HistoryView: View {
                     Image(systemName: "doc.text.magnifyingglass")
                         .font(.system(size: 48))
                         .foregroundColor(.secondary)
-                    
+
                     Text("Select an organization result to view details")
                         .foregroundColor(.secondary)
                 }
@@ -72,7 +72,7 @@ struct HistoryView: View {
 
 struct HistoryRowView: View {
     let result: OrganizationResult
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
@@ -85,16 +85,16 @@ struct HistoryRowView: View {
             Text(result.summary)
                 .font(.body)
                 .lineLimit(2)
-            
+
             HStack {
                 Label("\(result.filesProcessed) files", systemImage: "doc")
-                
+
                 Spacer()
-                
+
                 Label("\(result.categoriesCreated.count) categories", systemImage: "folder")
-                
+
                 Spacer()
-                
+
                 Label("\(String(format: "%.1f", result.duration))s", systemImage: "clock")
             }
             .font(.caption)
@@ -106,7 +106,7 @@ struct HistoryRowView: View {
 
 struct HistoryDetailView: View {
     let result: OrganizationResult
-    
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -117,33 +117,33 @@ struct HistoryDetailView: View {
                             .foregroundColor(.green)
                         Spacer()
                     }
-                    
+
                     Text(result.timestamp.formatted())
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                
+
                 Divider()
-                
+
                 // Summary Stats
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 16) {
                     StatCard(title: "Files Processed", value: "\(result.filesProcessed)", icon: "doc.text")
                     StatCard(title: "Files Organized", value: "\(result.filesOrganized)", icon: "checkmark.circle")
                     StatCard(title: "Categories", value: "\(result.categoriesCreated.count)", icon: "folder")
                 }
-                
+
                 Divider()
-                
+
                 // Directories
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Directories")
                         .font(.headline)
-                    
+
                     VStack(alignment: .leading, spacing: 4) {
                         Label("Source", systemImage: "folder")
                             .font(.subheadline)
                             .fontWeight(.medium)
-                        
+
                         Text(result.sourceDirectory)
                             .font(.body)
                             .foregroundColor(.secondary)
@@ -151,12 +151,12 @@ struct HistoryDetailView: View {
                     }
                     .padding()
                     .liquidGlassBackground(cornerRadius: 8)
-                    
+
                     VStack(alignment: .leading, spacing: 4) {
                         Label("Target", systemImage: "folder.badge.plus")
                             .font(.subheadline)
                             .fontWeight(.medium)
-                        
+
                         Text(result.targetDirectory)
                             .font(.body)
                             .foregroundColor(.secondary)
@@ -165,23 +165,23 @@ struct HistoryDetailView: View {
                     .padding()
                     .liquidGlassBackground(cornerRadius: 8)
                 }
-                
+
                 Divider()
-                
+
                 // Categories Created
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Categories Created")
                         .font(.headline)
-                    
+
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 8) {
                         ForEach(result.categoriesCreated, id: \.self) { category in
                             HStack {
                                 Image(systemName: "folder.fill")
                                     .foregroundColor(.blue)
-                                
+
                                 Text(category)
                                     .font(.body)
-                                
+
                                 Spacer()
                             }
                             .padding(8)
@@ -189,7 +189,7 @@ struct HistoryDetailView: View {
                         }
                     }
                 }
-                
+
                 Spacer()
             }
             .padding()
@@ -202,17 +202,17 @@ struct StatCard: View {
     let title: String
     let value: String
     let icon: String
-    
+
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.title2)
                 .foregroundColor(.blue)
-            
+
             Text(value)
                 .font(.title2)
                 .fontWeight(.bold)
-            
+
             Text(title)
                 .font(.caption)
                 .foregroundColor(.secondary)

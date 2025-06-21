@@ -35,7 +35,7 @@ actor DirectorySummarySession {
     func add(_ meta: FileMetadata) async throws {
         let session = try await sessionPool.acquire()
         defer { Task { await sessionPool.release(session) } }
-        
+
         _ = try await session.respond(
             to: "\(meta.primaryCategory) | \(meta.suggestedFilename) | \(meta.confidence)",
             options: .init(temperature: 0)
@@ -46,7 +46,7 @@ actor DirectorySummarySession {
     func globalAdvice() async throws -> String {
         let session = try await sessionPool.acquire()
         defer { Task { await sessionPool.release(session) } }
-        
+
         let response = try await session.respond(
             to: """
                 Summarise the directory and suggest canonical folder names \
@@ -61,7 +61,7 @@ actor DirectorySummarySession {
     func debugExportMemory() async throws {
         let session = try await sessionPool.acquire()
         defer { Task { await sessionPool.release(session) } }
-        
+
         let response = try await session.respond(
             to: "Show me all the data here currently.",
             options: .init(temperature: 0)
@@ -96,7 +96,7 @@ actor DirectorySummarySession {
     ) async throws {
         let session = try await sessionPool.acquire()
         defer { Task { await sessionPool.release(session) } }
-        
+
         let response = try await session.respond(
             to: "Show me all the data here currently.",
             options: .init(temperature: 0)
@@ -122,7 +122,7 @@ actor DirectorySummarySession {
     func memoryLineCount() async throws -> Int {
         let session = try await sessionPool.acquire()
         defer { Task { await sessionPool.release(session) } }
-        
+
         let response = try await session.respond(
             to: "Count how many lines of memory you have.",
             options: .init(temperature: 0)

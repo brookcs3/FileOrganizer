@@ -17,7 +17,7 @@ import Observation
 struct FileOrganizerApp: App {
     @StateObject private var appState = AppState()
     @StateObject private var foundationModelsManager = FoundationModelsManager()
-    
+
     var body: some Scene {
         WindowGroup {
             rootView
@@ -25,14 +25,14 @@ struct FileOrganizerApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified)
-        
+
         Settings {
             SettingsView()
                 .environmentObject(appState)
                 .environmentObject(foundationModelsManager)
         }
     }
-    
+
     @ViewBuilder private var rootView: some View {
         if foundationModelsManager.isAvailable {
             ContentView()
@@ -71,7 +71,7 @@ class AppState: ObservableObject {
     var processingStatus = ""
     var lastOrganizationResult: OrganizationResult?
     var organizationHistory: [OrganizationResult] = []
-    
+
     func addToHistory(_ result: OrganizationResult) {
         organizationHistory.insert(result, at: 0)
         if organizationHistory.count > 50 {

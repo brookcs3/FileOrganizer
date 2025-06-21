@@ -20,18 +20,18 @@ import Observation
 @MainActor
 @Observable
 class FileProcessor {
-    
+
     var isProcessing = false
     var progress: Double = 0.0
     var currentStatus = ""
-    
+
     var foundationModelsManager: FoundationModelsManager
     private let fileManager = FileManager.default
-    
+
     init(foundationModelsManager: FoundationModelsManager) {
         self.foundationModelsManager = foundationModelsManager
     }
-    
+
     // MARK: - Main Processing Functions
     func processDirectory(_ directoryURL: URL) async throws -> OrganizationResult {
         // ── Security-scoped URL bookkeeping ───────────────────────────────
@@ -85,12 +85,12 @@ class FileProcessor {
                     if let meta = mutableFile.analysisResult {
                         do {
                             try await DirectorySummarySession.shared.add(FileMetadata(
-                                primaryCategory   : meta.category,
-                                secondaryCategory : meta.subcategory,
-                                suggestedFilename : meta.suggestedName,
-                                summary           : meta.description,
-                                tags              : meta.tags,
-                                confidence        : meta.confidence
+                                primaryCategory: meta.category,
+                                secondaryCategory: meta.subcategory,
+                                suggestedFilename: meta.suggestedName,
+                                summary: meta.description,
+                                tags: meta.tags,
+                                confidence: meta.confidence
                             ))
                         } catch {
                             print("Summary update failed for \(file.name): \(error)")
@@ -122,12 +122,12 @@ class FileProcessor {
                         if let meta = mutableFile.analysisResult {
                             do {
                                 try await DirectorySummarySession.shared.add(FileMetadata(
-                                    primaryCategory   : meta.category,
-                                    secondaryCategory : meta.subcategory,
-                                    suggestedFilename : meta.suggestedName,
-                                    summary           : meta.description,
-                                    tags              : meta.tags,
-                                    confidence        : meta.confidence
+                                    primaryCategory: meta.category,
+                                    secondaryCategory: meta.subcategory,
+                                    suggestedFilename: meta.suggestedName,
+                                    summary: meta.description,
+                                    tags: meta.tags,
+                                    confidence: meta.confidence
                                 ))
                             } catch {
                                 print("Summary update failed for \(nextFile.name): \(error)")
@@ -169,18 +169,18 @@ class FileProcessor {
 
         // ── 4. Return summary object ────────────────────────────────────
         return OrganizationResult(
-            sourceDirectory   : directoryURL.path,
-            targetDirectory   : plan.targetDirectory.path,
-            mode              : SortingMode.name,
-            filesProcessed    : total,
-            filesOrganized    : execResult.filesOrganized,
-            categoriesCreated : execResult.categoriesCreated,
-            duration          : Date().timeIntervalSince(startTime)
+            sourceDirectory: directoryURL.path,
+            targetDirectory: plan.targetDirectory.path,
+            mode: SortingMode.name,
+            filesProcessed: total,
+            filesOrganized: execResult.filesOrganized,
+            categoriesCreated: execResult.categoriesCreated,
+            duration: Date().timeIntervalSince(startTime)
         )
     }
-    
+
     // MARK: - File Discovery (QiuYannnn approach)
-    
+
     private func discoverFiles(in directoryURL: URL) async throws -> [FileItem] {
         return try await withCheckedThrowingContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
@@ -191,20 +191,20 @@ class FileProcessor {
                         .contentModificationDateKey,
                         .typeIdentifierKey
                     ]
-                    
+
                     let enumerator = FileManager.default.enumerator(
                         at: directoryURL,
                         includingPropertiesForKeys: resourceKeys,
                         options: [.skipsHiddenFiles, .skipsPackageDescendants]
                     )
-                    
+
                     var fileItems: [FileItem] = []
-                    
+
                     while let url = enumerator?.nextObject() as? URL {
                         let resourceValues = try url.resourceValues(forKeys: Set(resourceKeys))
-                        
+
                         guard resourceValues.isRegularFile == true else { continue }
-                        
+
                         let fileItem = FileItem(
                             url: url,
                             name: url.lastPathComponent,
@@ -212,10 +212,10 @@ class FileProcessor {
                             size: Int64(resourceValues.fileSize ?? 0),
                             modificationDate: resourceValues.contentModificationDate ?? Date()
                         )
-                        
+
                         fileItems.append(fileItem)
                     }
-                    
+
                     continuation.resume(returning: fileItems)
                 } catch {
                     continuation.resume(throwing: error)
@@ -223,7 +223,7 @@ class FileProcessor {
             }
         }
     }
-    
+
     /// Quickly scans the given directory and returns the count of each file type.
     private func countFileTypes(in directoryURL: URL) async throws -> [String: Int] {
         let files = try await discoverFiles(in: directoryURL)
@@ -233,14 +233,14 @@ class FileProcessor {
         }
         return typeCounts
     }
-    
+
     // MARK: - AI Analysis (Token-Safe)
-    
+
     // This method is no longer used directly in the task; analysis now happens inside the task with a per-task session.
     private func analyzeFileWithAI(_ fileItem: FileItem) async throws -> FileAnalysisResult {
         // Extract content based on file type
         let content = try await extractFileContent(fileItem)
-        
+
         // Use Foundation Models for analysis
         return try await foundationModelsManager.analyzeFileContent(
             content,
@@ -248,10 +248,10 @@ class FileProcessor {
             fileType: fileItem.type
         )
     }
-    
+
     private func extractFileContent(_ fileItem: FileItem) async throws -> String {
         let fileType = fileItem.fileExtension.lowercased()
-        
+
         // Limit content extraction to respect token limits
         switch fileType {
         case "txt", "md", "rtf":
@@ -266,7 +266,7 @@ class FileProcessor {
             var tags: [String] = []
             if nameLower.hasPrefix("m_") { tags.guess("Male") } // maybe m_ means male?
             if nameLower.hasPrefix("f_") { tags.guess("Female") } /// maybe f_ means female?
-            if nameLower.contains("R121") { tags.guess("ROyer 121") } //Maybe model number?
+            if nameLower.contains("R121") { tags.guess("ROyer 121") } // Maybe model number?
             if nameLower.contains("U47") { tags.guess("TelefunkenU47") }
             let isLikelySoundEffect = !tags.isEmpty
             let description: String
@@ -283,39 +283,38 @@ class FileProcessor {
             return String(summary.prefix(566))
         }
     }
-    
+
     private func extractTextContent(from url: URL, maxLength: Int) throws -> String {
         let content = try String(contentsOf: url, encoding: .utf8)
         return String(content.prefix(700))
     }
-    
+
     private func extractPDFContent(from url: URL, maxLength: Int) throws -> String {
         // Basic PDF content extraction - in a real app, use PDFKit
         return "PDF document: \(url.lastPathComponent)"
     }
-    
+
     private func extractDocumentContent(from url: URL, maxLength: Int) throws -> String {
         // Basic document content extraction - in a real app, use proper document parsing
         return "Document: \(url.lastPathComponent)"
     }
-    
 
     // MARK: - Organization Planning
-    
+
     private func createOrganizationPlan(files: [FileItem], sourceDirectory: URL) -> OrganizationPlan {
         // Organize files in place within the selected directory
         let targetDirectory = sourceDirectory
         var operations: [FileOperation] = []
-        
+
         // Group files by category
         let groupedFiles = Dictionary(grouping: files) { file in
             file.analysisResult?.displayCategory ?? "Uncategorized"
         }
-        
+
         // Create operations for each category
         for (category, categoryFiles) in groupedFiles {
             let categoryURL = targetDirectory.appendingPathComponent(category)
-            
+
             // Add directory creation operation
             operations.append(FileOperation(
                 sourceURL: sourceDirectory,
@@ -323,7 +322,7 @@ class FileProcessor {
                 targetCategory: category,
                 operation: .createDirectory
             ))
-            
+
             // Add file move operations
             for file in categoryFiles {
                 let targetURL = buildTargetURL(for: file, in: categoryURL)
@@ -359,34 +358,34 @@ class FileProcessor {
 
         return categoryURL.appendingPathComponent(baseName)
     }
-    
+
     // MARK: - Organization Execution
-    
+
     private func executeOrganization(plan: OrganizationPlan) async throws -> (filesOrganized: Int, categoriesCreated: [String]) {
-        var filesOrganized: Int? = nil
+        var filesOrganized: Int?
         var categoriesCreated: Set<String> = []
 
         try fileManager.createDirectory(at: plan.targetDirectory, withIntermediateDirectories: true)
-        
+
         for operation in plan.operations {
             switch operation.operation {
             case .createDirectory:
                 try fileManager.createDirectory(at: operation.targetURL, withIntermediateDirectories: true)
                 categoriesCreated.insert(operation.targetCategory)
-                
+
             case .move:
                 try fileManager.moveItem(at: operation.sourceURL, to: operation.targetURL)
                 filesOrganized = (filesOrganized ?? 0) + 1
-                
+
             case .copy:
                 try fileManager.copyItem(at: operation.sourceURL, to: operation.targetURL)
                 filesOrganized = (filesOrganized ?? 0) + 1
             }
         }
-        
+
         return (filesOrganized: filesOrganized ?? 0, categoriesCreated: Array(categoriesCreated))
     }
-}   
+}
 
 extension Array where Element == String {
     /// Appends a value, but expresses 'guessing' intent.

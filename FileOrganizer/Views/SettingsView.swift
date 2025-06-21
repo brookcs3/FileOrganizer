@@ -12,11 +12,11 @@ struct SettingsView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var foundationModelsManager: FoundationModelsManager
     @StateObject private var metadataStore = MetadataStore()
-    
+
     @State private var settings = AppSettings()
     @State private var showingClearCacheAlert = false
     @State private var cacheSize: Int64 = 0
-    
+
     var body: some View {
         NavigationView {
             Form {
@@ -26,7 +26,7 @@ struct SettingsView: View {
                            in: 10...1000,
                            step: 10)
                 }
-                
+
                 Section("Organization") {
                     Picker("Organization Strategy", selection: $settings.organizationStrategy) {
                         ForEach(AppSettings.OrganizationStrategy.allCases, id: \.self) { strategy in
@@ -38,11 +38,11 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                
+
                 Section("Notifications") {
                     Toggle("Enable Progress Notifications", isOn: $settings.enableProgressNotifications)
                 }
-                
+
                 Section("Apple Intelligence") {
                     HStack {
                         Text("Status")
@@ -50,21 +50,21 @@ struct SettingsView: View {
                         Text(foundationModelsManager.availabilityStatus)
                             .foregroundColor(.secondary)
                     }
-                    
+
                     HStack {
                         Text("Available")
                         Spacer()
                         Image(systemName: foundationModelsManager.isAvailable ? "checkmark.circle.fill" : "xmark.circle.fill")
                             .foregroundColor(foundationModelsManager.isAvailable ? .green : .red)
                     }
-                    
+
                     if !foundationModelsManager.isAvailable {
                         Text("Apple Intelligence must be enabled in System Settings for AI-powered organization.")
                             .font(.caption)
                             .foregroundColor(.orange)
                     }
                 }
-                
+
                 Section("Storage") {
                     HStack {
                         Text("Cache Size")
@@ -72,13 +72,13 @@ struct SettingsView: View {
                         Text(ByteCountFormatter.string(fromByteCount: cacheSize, countStyle: .file))
                             .foregroundColor(.secondary)
                     }
-                    
+
                     Button("Clear Analysis Cache") {
                         showingClearCacheAlert = true
                     }
                     .foregroundColor(.red)
                 }
-                
+
                 Section("About") {
                     HStack {
                         Text("Version")
@@ -86,14 +86,14 @@ struct SettingsView: View {
                         Text("1.0.0")
                             .foregroundColor(.secondary)
                     }
-                    
+
                     HStack {
                         Text("Build")
                         Spacer()
                         Text("1")
                             .foregroundColor(.secondary)
                     }
-                    
+
                     Text("Built with Apple Foundation Models and programmed by Cameron Brooks.")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -124,7 +124,7 @@ struct SettingsView: View {
             Text("This will clear all cached analysis results. You'll need to re-analyze files.")
         }
     }
-    
+
     private func loadSettings() {
         do {
             if let loadedSettings = try metadataStore.loadSettings() {
@@ -134,20 +134,20 @@ struct SettingsView: View {
             print("Failed to load settings: \(error)")
         }
     }
-    
+
     private func saveSettings() {
         do {
             try metadataStore.saveSettings(settings)
-            
+
         } catch {
             print("Failed to save settings: \(error)")
         }
     }
-    
+
     private func updateCacheSize() {
         cacheSize = metadataStore.getCacheSize()
     }
-    
+
     private func clearCache() {
         do {
             try metadataStore.clearAnalysisCache()

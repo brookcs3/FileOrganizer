@@ -17,7 +17,7 @@ struct FileAnalysisResult: @preconcurrency Codable, Identifiable {
     let description: String
     let tags: [String]
     let confidence: Double
-    
+
     // ADD this initializer:
     init(category: String, subcategory: String?, suggestedName: String, description: String, tags: [String], confidence: Double) {
         self.id = UUID()
@@ -28,7 +28,7 @@ struct FileAnalysisResult: @preconcurrency Codable, Identifiable {
         self.tags = tags
         self.confidence = confidence
     }
-    
+
     var displayCategory: String {
         if let subcategory = subcategory {
             return "\(category)/\(subcategory)"
@@ -36,7 +36,6 @@ struct FileAnalysisResult: @preconcurrency Codable, Identifiable {
         return category
     }
 }
-
 
 struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable, Sendable {
     let id: UUID
@@ -48,8 +47,7 @@ struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable, Send
     let filesOrganized: Int
     let categoriesCreated: [String]
     let duration: TimeInterval
-    
-    
+
     init(sourceDirectory: String, targetDirectory: String, mode: String, filesProcessed: Int, filesOrganized: Int, categoriesCreated: [String], duration: TimeInterval) {
         self.id = UUID()
         self.timestamp = Date()
@@ -61,12 +59,11 @@ struct OrganizationResult: Identifiable, @preconcurrency Codable, Hashable, Send
         self.categoriesCreated = categoriesCreated  // Fix: assign categoriesCreated
         self.duration = duration
     }
-    
+
     var summary: String {
         return "Organized \(filesOrganized)/\(filesProcessed) files into \(categoriesCreated.count) categories"
     }
 }
-
 
 struct FileItem: Identifiable {
     let id = UUID()
@@ -76,11 +73,11 @@ struct FileItem: Identifiable {
     let size: Int64
     let modificationDate: Date
     var analysisResult: FileAnalysisResult?
-    
+
     var displaySize: String {
         ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
     }
-    
+
     var fileExtension: String {
         url.pathExtension.lowercased()
     }
@@ -90,7 +87,7 @@ struct OrganizationPlan {
     let sourceDirectory: URL
     let targetDirectory: URL
     let operations: [FileOperation]
-    
+
     var summary: String {
         let categories = Set(operations.map { $0.targetCategory }).count
         return "Plan: Move \(operations.count) files into \(categories) categories"
@@ -102,7 +99,7 @@ struct FileOperation {
     let targetURL: URL
     let targetCategory: String
     let operation: OperationType
-    
+
     enum OperationType {
         case move
         case copy
@@ -116,12 +113,12 @@ struct AppSettings: @preconcurrency Codable {
     var maxFilesPerBatch = 100
     var enableProgressNotifications = true
     var organizationStrategy: OrganizationStrategy = .createSubfolders
-    
+
     enum OrganizationStrategy: String, CaseIterable, Codable {
         case createSubfolders = "Create Subfolders"
         case flatStructure = "Flat Structure"
         case dateHierarchy = "Date Hierarchy"
-        
+
         var description: String {
             switch self {
             case .createSubfolders:
@@ -135,7 +132,6 @@ struct AppSettings: @preconcurrency Codable {
     }
 }
 
-
 // MARK: - Enums
 
 struct SortingMode {
@@ -146,4 +142,3 @@ struct SortingMode {
     // Private initializer to prevent instantiation of utility struct
     private init() {}
 }
-

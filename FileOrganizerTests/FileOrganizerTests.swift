@@ -13,7 +13,7 @@ import Foundation
 
 private enum TestConstants {
     static let documentsCategory = "Documents"
-    static let pdfSubcategory = "PDFs" 
+    static let pdfSubcategory = "PDFs"
     static let imagesCategory = "Images"
     static let testPdfName = "test.pdf"
     static let testSourcePath = "/path/to/source"
@@ -24,7 +24,7 @@ private enum TestConstants {
 // MARK: - Model Tests
 
 struct FileAnalysisResultTests {
-    
+
     @Test @MainActor func testFileAnalysisResultInitialization() {
         let result = FileAnalysisResult(
             category: TestConstants.documentsCategory,
@@ -34,7 +34,7 @@ struct FileAnalysisResultTests {
             tags: ["document", "pdf"],
             confidence: 0.95
         )
-        
+
         #expect(result.category == TestConstants.documentsCategory)
         #expect(result.subcategory == "PDFs")
         #expect(result.suggestedName == "test.pdf")
@@ -43,7 +43,7 @@ struct FileAnalysisResultTests {
         #expect(result.confidence == 0.95)
         #expect(result.id != UUID())
     }
-    
+
     @Test @MainActor func testDisplayCategoryWithSubcategory() {
         let result = FileAnalysisResult(
             category: TestConstants.documentsCategory,
@@ -53,10 +53,10 @@ struct FileAnalysisResultTests {
             tags: [],
             confidence: 0.9
         )
-        
+
         #expect(result.displayCategory == "\(TestConstants.documentsCategory)/\(TestConstants.pdfSubcategory)")
     }
-    
+
     @Test @MainActor func testDisplayCategoryWithoutSubcategory() {
         let result = FileAnalysisResult(
             category: TestConstants.documentsCategory,
@@ -66,10 +66,10 @@ struct FileAnalysisResultTests {
             tags: [],
             confidence: 0.9
         )
-        
+
         #expect(result.displayCategory == TestConstants.documentsCategory)
     }
-    
+
     @Test @MainActor func testFileAnalysisResultCodable() throws {
         let original = FileAnalysisResult(
             category: "Images",
@@ -79,10 +79,10 @@ struct FileAnalysisResultTests {
             tags: ["image", "screenshot"],
             confidence: 0.85
         )
-        
+
         let encoded = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(FileAnalysisResult.self, from: encoded)
-        
+
         #expect(decoded.category == original.category)
         #expect(decoded.subcategory == original.subcategory)
         #expect(decoded.suggestedName == original.suggestedName)
@@ -93,7 +93,7 @@ struct FileAnalysisResultTests {
 }
 
 struct OrganizationResultTests {
-    
+
     @Test @MainActor func testOrganizationResultInitialization() {
         let result = OrganizationResult(
             sourceDirectory: TestConstants.testSourcePath,
@@ -104,7 +104,7 @@ struct OrganizationResultTests {
             categoriesCreated: ["Documents", "Images"],
             duration: 5.2
         )
-        
+
         #expect(result.sourceDirectory == "/path/to/source")
         #expect(result.targetDirectory == "/path/to/target")
         #expect(result.mode == "AI Intelligent")
@@ -115,7 +115,7 @@ struct OrganizationResultTests {
         #expect(result.id != UUID())
         #expect(result.timestamp <= Date())
     }
-    
+
     @Test @MainActor func testOrganizationResultSummary() {
         let result = OrganizationResult(
             sourceDirectory: TestConstants.testSourcePath,
@@ -126,10 +126,10 @@ struct OrganizationResultTests {
             categoriesCreated: ["Documents", "Images", "Videos"],
             duration: 3.1
         )
-        
+
         #expect(result.summary == "Organized 12/15 files into 3 categories")
     }
-    
+
     @Test @MainActor func testOrganizationResultCodable() throws {
         let original = OrganizationResult(
             sourceDirectory: TestConstants.testSourcePath,
@@ -140,10 +140,10 @@ struct OrganizationResultTests {
             categoriesCreated: ["Documents"],
             duration: 2.5
         )
-        
+
         let encoded = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(OrganizationResult.self, from: encoded)
-        
+
         #expect(decoded.sourceDirectory == original.sourceDirectory)
         #expect(decoded.targetDirectory == original.targetDirectory)
         #expect(decoded.mode == original.mode)
@@ -155,30 +155,30 @@ struct OrganizationResultTests {
 }
 
 struct AppSettingsTests {
-    
+
     @Test @MainActor func testAppSettingsDefaults() {
         let settings = AppSettings()
-        
+
         #expect(settings.maxFilesPerBatch == 100)
         #expect(settings.enableProgressNotifications)
         #expect(settings.organizationStrategy == .createSubfolders)
     }
-    
+
     @Test @MainActor func testOrganizationStrategyDescriptions() {
         #expect(AppSettings.OrganizationStrategy.createSubfolders.description.contains("category"))
         #expect(AppSettings.OrganizationStrategy.flatStructure.description.contains("same directory"))
         #expect(AppSettings.OrganizationStrategy.dateHierarchy.description.contains("year"))
     }
-    
+
     @Test @MainActor func testAppSettingsCodable() throws {
         var original = AppSettings()
         original.maxFilesPerBatch = 50
         original.enableProgressNotifications = false
         original.organizationStrategy = .dateHierarchy
-        
+
         let encoded = try JSONEncoder().encode(original)
         let decoded = try JSONDecoder().decode(AppSettings.self, from: encoded)
-        
+
         #expect(decoded.maxFilesPerBatch == 50)
         #expect(!decoded.enableProgressNotifications)
         #expect(decoded.organizationStrategy == .dateHierarchy)
@@ -186,7 +186,7 @@ struct AppSettingsTests {
 }
 
 struct SortingModeTests {
-    
+
     @Test @MainActor func testSortingModeConstants() {
         #expect(SortingMode.name == "AI Intelligent")
         #expect(SortingMode.humanReadableDescription.contains("Apple Intelligence"))
