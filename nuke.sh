@@ -1,11 +1,22 @@
 #!/bin/bash
 
 # nuke.sh - Completely destroys folder organization for RestoreManager testing
-# Target: /Users/cameronbrooks/Developer/Xcode Projects/FileOrganizer/realistic_110_files
+# Usage: ./nuke.sh [TARGET_FOLDER]
 
 set -e
 
-TARGET_DIR="/Users/cameronbrooks/Developer/Xcode Projects/FileOrganizer/realistic_110_files"
+# Check if folder argument provided
+if [ $# -eq 0 ]; then
+    echo "Usage: $0 <target_folder>"
+    echo "Example: $0 /path/to/folder"
+    echo "Example: $0 ~/Downloads/messy_folder"
+    exit 1
+fi
+
+TARGET_DIR="$1"
+
+# Resolve to absolute path
+TARGET_DIR=$(cd "$TARGET_DIR" && pwd)
 
 if [ ! -d "$TARGET_DIR" ]; then
     echo "❌ Target directory does not exist: $TARGET_DIR"

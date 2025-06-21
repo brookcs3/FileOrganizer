@@ -17,7 +17,6 @@ struct ContentView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var foundationModelsManager: FoundationModelsManager
     @State private var fileProcessor: FileProcessor
-    @State private var altFileProcessor: AltFileProcessor
     private let metadataStore = MetadataStore()
 
     @State private var showingDirectoryPicker = false
@@ -33,30 +32,8 @@ struct ContentView: View {
         _fileProcessor = State(
             wrappedValue: FileProcessor(foundationModelsManager: placeholder)
         )
-        _altFileProcessor = State(
-            wrappedValue: AltFileProcessor(foundationModelsManager: placeholder)
-        )
     }
     
-    private var activeProcessorStatus: String {
-        if fileProcessor.isProcessing {
-            return fileProcessor.currentStatus
-        } else if altFileProcessor.isProcessing {
-            return altFileProcessor.currentStatus
-        } else {
-            return ""
-        }
-    }
-    
-    private var activeProcessorProgress: Double {
-        if fileProcessor.isProcessing {
-            return fileProcessor.progress
-        } else if altFileProcessor.isProcessing {
-            return altFileProcessor.progress
-        } else {
-            return 0.0
-        }
-    }
 
     var body: some View {
         NavigationSplitView {
@@ -99,7 +76,6 @@ struct ContentView: View {
         .onAppear {
             // Replace placeholder with real manager
             fileProcessor.foundationModelsManager = foundationModelsManager
-            altFileProcessor.foundationModelsManager = foundationModelsManager
 
             // Auto-select fixture when injected
             if let path = fixturePath, appState.selectedDirectory == nil {
@@ -246,13 +222,6 @@ struct ContentView: View {
                     Button("Settings") { showingSettings = true }
                         .buttonStyle(.bordered)
                         .tint(.accentColor)
-                        
-                    Button("🧪 Test RestoreManager") {
-                        testRestoreManager()
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(.purple)
-                    .controlSize(.small)
                 }
                 .padding(.horizontal)
             }
@@ -293,22 +262,19 @@ struct ContentView: View {
 
             // Main Action Area
             VStack(spacing: 16) {
-                if fileProcessor.isProcessing || altFileProcessor.isProcessing {
+                if fileProcessor.isProcessing {
                     // Processing View
                     VStack(spacing: 12) {
-                        let progressValue = activeProcessorProgress
-                        let statusText = activeProcessorStatus
-                        
-                        ProgressView(value: progressValue)
+                        ProgressView(value: fileProcessor.progress)
                             .accessibilityIdentifier("organizeProgress")
                             .progressViewStyle(.linear)
                             .frame(maxWidth: 400)
 
-                        Text(statusText)
+                        Text(fileProcessor.currentStatus)
                             .font(.body)
                             .foregroundColor(.secondary)
 
-                        Text("\(Int(progressValue * 100))% Complete")
+                        Text("\(Int(fileProcessor.progress * 100))% Complete")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -334,35 +300,18 @@ struct ContentView: View {
                                 .foregroundColor(.secondary)
                         }
 
-                        VStack(spacing: 12) {
-                            Button("Organize Files") {
-                                organizeFiles()
-                            }
-                            .accessibilityIdentifier("organizeButton")
-                            .buttonStyle(.borderedProminent)
-                            .tint(.accentColor)
-                            .disabled(
-                                appState.selectedDirectory == nil
-                                    || fileProcessor.isProcessing
-                                    || altFileProcessor.isProcessing
-                                    || !foundationModelsManager.isAvailable
-                            )
-                            .controlSize(.large)
-                            
-                            Button("ALT Organize (Token-Safe)") {
-                                altOrganizeFiles()
-                            }
-                            .accessibilityIdentifier("altOrganizeButton")
-                            .buttonStyle(.bordered)
-                            .tint(.orange)
-                            .disabled(
-                                appState.selectedDirectory == nil
-                                    || fileProcessor.isProcessing
-                                    || altFileProcessor.isProcessing
-                                    || !foundationModelsManager.isAvailable
-                            )
-                            .controlSize(.regular)
+                        Button("Organize Files") {
+                            organizeFiles()
                         }
+                        .accessibilityIdentifier("organizeButton")
+                        .buttonStyle(.borderedProminent)
+                        .tint(.accentColor)
+                        .disabled(
+                            appState.selectedDirectory == nil
+                                || fileProcessor.isProcessing
+                                || !foundationModelsManager.isAvailable
+                        )
+                        .controlSize(.large)
                     }
                     .padding(32)
                     .liquidGlassBackground()
@@ -418,48 +367,8 @@ struct ContentView: View {
         }
     }
     
-    func altOrganizeFiles() {
-        guard let directory = appState.selectedDirectory else { return }
-
-        Task {
-            do {
-                let result = try await altFileProcessor.processDirectoryAlt(directory)
-                appState.lastOrganizationResult = result
-                appState.addToHistory(result)
-                try metadataStore.saveOrganizationResult(result)  // persist
-            } catch {
-                showAlert("ALT Organization failed: \(error.localizedDescription)")
-            }
-        }
-    }
     
-    func testRestoreManager() {
-        guard let directory = appState.selectedDirectory else { 
-            showAlert("Please select a directory first")
-            return 
-        }
-
-        Task {
-            do {
-                // Step 1: Tag files and create snapshots
-                let snapshots = RestoreManager.tagAllFilesInTree(rootURL: directory)
-                showAlert("✅ Tagged \(snapshots.count) files with UUIDs")
-                
-                // Step 2: Create restore file
-                let success = RestoreManager.createRestoreFile(at: directory, snapshots: snapshots, useApplicationSupport: true)
-                
-                if success {
-                    // Step 3: Find restore files
-                    let restoreFiles = RestoreManager.findRestoreFiles(for: directory)
-                    showAlert("✅ Restore file created! Found \(restoreFiles.count) restore files. Now run nuke.sh to test restoration.")
-                } else {
-                    showAlert("❌ Failed to create restore file")
-                }
-            } catch {
-                showAlert("RestoreManager test failed: \(error.localizedDescription)")
-            }
-        }
-    }
+    // NOTE: RestoreManager remains in project but dormant for future development
 
     private func showAlert(_ message: String) {
         alertMessage = message

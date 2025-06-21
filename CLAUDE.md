@@ -7,8 +7,15 @@ FileSorter is a macOS SwiftUI application that uses Apple's FoundationModels fra
 
 ## System Requirements
 - macOS 26.0+ (required for FoundationModels framework)
-- Xcode 16.0+
-- Swift 6.0+
+- Xcode 26.0+ (Build 17A5241e)
+- Swift 6.2+ (6.2.0.9.909)
+
+## Current Development Environment (Verified 2025-06-20)
+- **Swift Version**: Apple Swift version 6.2 (swiftlang-6.2.0.9.909 clang-1700.3.9.907)
+- **Xcode Version**: Xcode 26.0 Build version 17A5241e  
+- **Target**: arm64-apple-macosx26.0
+- **RAM**: 128 GB
+- **Note**: Always verify versions with `swift --version` and `xcodebuild -version` rather than assuming from documentation dates
 
 ## Development Commands
 
