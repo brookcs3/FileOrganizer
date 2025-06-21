@@ -14,15 +14,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run AI inference with Mistral
+      - name: Run AI inference with Codestral
         id: inference
         uses: actions/ai-inference@v1
         with:
-          model: mistral-tiny
-          api_base: https://api.mistral.ai/v1
-          api_key: ${{ secrets.MISTRAL_API_KEY }}
+          model: codestral
+          api_base: https://codestral.mistral.ai/v1/chat/completions
+          api_key: ${{ secrets.CODESTRAL_API_KEY }}
           prompt: |
-            Summarize the current state and key functionalities of the code in this repository clearly and concisely. Then, suggest exciting, competitive, or sought-after features that could enhance this project.
+            Summarize the current state and key functionalities of the code in this repository clearly and concisely.
+            Then, suggest exciting, competitive, or sought-after features that could enhance this project.
 
       - name: Output AI summary and feature suggestions
         run: |
