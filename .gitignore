@@ -16,4 +16,4 @@ IDEFindNavigatorScopes.plist
 
 # Build artifacts
 build/
-DerivedData/
+package-lock.json
